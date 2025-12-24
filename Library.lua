@@ -326,7 +326,7 @@ local function select_map_override(map_id)
     cast_map_vote(map_id, Vector3.new(12.59, 10.64, 52.01))
     task.wait(1)
     lobby_ready_up()
-    task.wait(7)
+    task.wait(15)
     match_ready_up()
 end
 
