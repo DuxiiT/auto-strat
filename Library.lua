@@ -60,7 +60,7 @@ local ItemNames = {
 
 -- // currency tracking
 local start_coins, current_total_coins, start_gems, current_total_gems = 0, 0, 0, 0
-if game_state == "LOBBY" then
+if game_state == "GAME" then
     pcall(function()
         repeat task.wait(1) until local_player:FindFirstChild("Coins")
         start_coins = local_player.Coins.Value
