@@ -9,6 +9,11 @@ TDS:Upgrade(idx, path)      -> Upgrades tower at index (path 1 or 2).
 TDS:Sell(idx)               -> Sells tower at index.
 TDS:SetTarget(idx, mode)    -> Targeting: "First", "Strong", "Last", "Random".
 TDS:UseTimeScale(val)       -> Sets speed: 0.5, 1, 1.5, or 2.
+TDS:GameInfo(map, modifiers)       -> Selects the desired Map and Modifiers
+Modifiers:
+HiddenEnemies = true, Glass = true, ExplodingEnemies = true, Limitation = true, Committed = true, HealthyEnemies = true, SpeedyEnemies = true, Quarantine = true, Fog = true, FlyingEnemies = true, Broke = true, Jailed = true, Inflation = true
+
+Usage: TDS:GameInfo("Simplicity", {HiddenEnemies = true, ExplodingEnemies = true})
 
 --------------------------------------------------------------------------------
 [ TDS:SetOption ]
