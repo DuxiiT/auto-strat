@@ -1,11 +1,11 @@
 -- [[ CONFIGURATION ]]
-_G.AutoStrat     = true
-_G.AutoSkip      = true
+_G.AutoStrat = true
+_G.AutoSkip = true
 _G.AutoSnowballs = true
 
 -- [[ WEBHOOK SETTINGS ]]
-_G.SendWebhook   = false -- Set to true to enable notifications
-_G.Webhook       = "YOUR-WEBHOOK-URL-HERE" 
+_G.SendWebhook = false -- Set to true to enable notifications
+_G.Webhook = "YOUR-WEBHOOK-URL-HERE" 
 
 -- [[ INITIALIZE LIBRARY ]]
 local TDS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Library.lua"))()
