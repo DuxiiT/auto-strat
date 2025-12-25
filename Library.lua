@@ -29,9 +29,6 @@ end
 local replicated_storage = game:GetService("ReplicatedStorage")
 local remote_func = replicated_storage:WaitForChild("RemoteFunction")
 local remote_event = replicated_storage:WaitForChild("RemoteEvent")
-if replicated_storage:FindFirstChild("Network") and replicated_storage.Network:FindFirstChild("Modifiers") then
-    local bulk_modifiers = replicated_storage:WaitForChild("Network"):WaitForChild("Modifiers"):WaitForChild("RF:BulkVoteModifiers")
-end
 local players_service = game:GetService("Players")
 local local_player = players_service.LocalPlayer or players_service.PlayerAdded:Wait()
 local player_gui = local_player:WaitForChild("PlayerGui")
@@ -331,6 +328,7 @@ local function select_map_override(map_id)
 end
 
 local function cast_modifier_vote(mods_table)
+    local bulk_modifiers = replicated_storage:WaitForChild("Network"):WaitForChild("Modifiers"):WaitForChild("RF:BulkVoteModifiers")
     local selected_mods = mods_table or {
         HiddenEnemies = true, Glass = true, ExplodingEnemies = true,
         Limitation = true, Committed = true, HealthyEnemies = true,
