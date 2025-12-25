@@ -344,16 +344,6 @@ local function cast_modifier_vote(mods_table)
 end
 
 -- // timescale logic
-local function unlock_speed_tickets()
-    if local_player.TimescaleTickets.Value >= 1 then
-        if player_gui.ReactUniversalHotbar.Frame.timescale.Lock.Visible then
-            replicated_storage.RemoteFunction:InvokeServer('TicketsManager', 'UnlockTimeScale')
-        end
-    else
-        warn("no tickets left")
-    end
-end
-
 local function set_game_timescale(target_val)
     local speed_list = {0, 0.5, 1, 1.5, 2}
 
@@ -393,6 +383,18 @@ local function set_game_timescale(target_val)
             "CycleTimeScale"
         )
         task.wait(0.5)
+    end
+end
+
+local function unlock_speed_tickets()
+    if local_player.TimescaleTickets.Value >= 1 then
+        if player_gui.ReactUniversalHotbar.Frame.timescale.Lock.Visible then
+            replicated_storage.RemoteFunction:InvokeServer('TicketsManager', 'UnlockTimeScale')
+            task.wait(1)
+            set_game_timescale(2)
+        end
+    else
+        warn("no tickets left")
     end
 end
 
@@ -616,8 +618,6 @@ function TDS:GameInfo(name, list)
     cast_modifier_vote(list)
     select_map_override(name)
     unlock_speed_tickets()
-    task.wait(1)
-    set_game_timescale(2)
 end
 
 function TDS:StartGame()
