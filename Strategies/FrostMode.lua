@@ -15,6 +15,8 @@ TDS:Loadout("Scout", "Accelerator", "Mercenary Base", "Hacker", "Warlock")
 TDS:Mode("Frost")
 TDS:GameInfo("Simplicity", {})
 
+TDS:UnlockTimeScale()
+TDS:TimeScale(2)
 TDS:Place("Scout", -15.24, 1.00, -8.97) -- 1
 TDS:Place("Scout", -16.65, 1.00, -11.65) -- 2
 TDS:Place("Scout", -19.71, 1.00, -12.34) -- 3
