@@ -357,8 +357,7 @@ local function set_game_timescale(target_val)
     if not target_idx then return end
 
     local speed_label =
-        game.Players.LocalPlayer.player_gui
-        .ReactUniversalHotbar.Frame.timescale.Speed
+        player_gui.ReactUniversalHotbar.Frame.timescale.Speed
 
     local current_val = tonumber(speed_label.Text:match("x([%d%.]+)"))
     if not current_val then return end
