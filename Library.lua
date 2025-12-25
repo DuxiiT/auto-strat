@@ -392,6 +392,7 @@ local function set_game_timescale(target_val)
             "TicketsManager",
             "CycleTimeScale"
         )
+        task.wait(0.5)
     end
 end
 
@@ -596,18 +597,6 @@ function TDS:Loadout(...)
 end
 
 -- ingame
-function TDS:TeleportAfterMatch()
-    handle_post_match()
-end
-
-function TDS:UnlockTimeScale()
-    unlock_speed_tickets()
-end
-
-function TDS:UseTimeScale(num)
-    set_game_timescale(num)
-end
-
 function TDS:TeleportToLobby()
     send_to_lobby()
 end
@@ -626,6 +615,9 @@ function TDS:GameInfo(name, list)
 
     cast_modifier_vote(list)
     select_map_override(name)
+    unlock_speed_tickets()
+    task.wait(1)
+    set_game_timescale(2)
 end
 
 function TDS:StartGame()
@@ -835,7 +827,7 @@ local function StartBackToLobbyLoop()
     task.spawn(function()
         while true do
             pcall(function()
-                TDS:TeleportAfterMatch()
+                handle_post_match()
             end)
             task.wait(5)
         end
