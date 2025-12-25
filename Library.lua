@@ -356,8 +356,7 @@ local function set_game_timescale(target_val)
     end
     if not target_idx then return end
 
-    local speed_label =
-        player_gui.ReactUniversalHotbar.Frame.timescale.Speed
+    local speed_label = game.Players.LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale.Speed
 
     local current_val = tonumber(speed_label.Text:match("x([%d%.]+)"))
     if not current_val then return end
@@ -387,7 +386,7 @@ end
 
 local function unlock_speed_tickets()
     if local_player.TimescaleTickets.Value >= 1 then
-        if player_gui.ReactUniversalHotbar.Frame.timescale.Lock.Visible then
+        if game.Players.LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale.Lock.Visible then
             replicated_storage.RemoteFunction:InvokeServer('TicketsManager', 'UnlockTimeScale')
             task.wait(1)
             set_game_timescale(2)
