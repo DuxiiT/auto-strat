@@ -57,6 +57,9 @@ local TDS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/td
 -- TDS:Mode("Frost")
 -- TDS:GameInfo("Simplicity", {})
 
+-- TDS:UnlockTimeScale() <-- You may remove this if you don't want to use timescale tickets
+-- TDS:TimeScale(2) <-- You may remove this if you don't want to use timescale tickets
+
 --TDS:Place("Soldier", 10, 10, 10)
 ```
 
