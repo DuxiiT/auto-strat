@@ -591,6 +591,11 @@ function TDS:Mode(difficulty)
                         mode = "hardcore",
                         count = 1
                     })
+                elseif difficulty == "Pizza Party" then
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
+                        mode = "halloween",
+                        count = 1
+                    })
                 else
                     return remote:InvokeServer("Multiplayer", "v2:start", {
                         difficulty = difficulty,
