@@ -289,18 +289,36 @@ local function run_vote_skip()
 end
 
 local function match_ready_up()
-    local function wait_for(parent, child_name)
-        local obj
-        repeat
-            obj = parent:FindFirstChild(child_name)
-            if not obj then task.wait(0.3) end
-        until obj
-        return obj
+    local player_gui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    
+    local ui_overrides = player_gui:WaitForChild("ReactOverridesVote", 30)
+    local main_frame = ui_overrides and ui_overrides:WaitForChild("Frame", 30)
+    
+    if not main_frame then
+        return
     end
 
-    local ui_overrides = wait_for(player_gui, "ReactOverridesVote")
-    local main_frame = wait_for(ui_overrides, "Frame")
-    local vote_node = wait_for(main_frame, "votes")
+    local vote_ready = nil
+
+    while not vote_ready do
+        local vote_node = main_frame:FindFirstChild("votes")
+        
+        if vote_node then
+            local container = vote_node:FindFirstChild("container")
+            if container then
+                local ready = container:FindFirstChild("ready")
+                if ready then
+                    vote_ready = ready
+                end
+            end
+        end
+        
+        if not vote_ready then
+            task.wait(0.5) 
+        end
+    end
+
+    repeat task.wait(0.1) until vote_ready.Visible == true
 
     run_vote_skip()
     log_match_start()
@@ -324,7 +342,6 @@ local function select_map_override(map_id)
     cast_map_vote(map_id, Vector3.new(12.59, 10.64, 52.01))
     task.wait(1)
     lobby_ready_up()
-    task.wait(15)
     match_ready_up()
 end
 
@@ -559,33 +576,38 @@ function TDS:Mode(difficulty)
         return false 
     end
 
+    local lobby_hud = player_gui:WaitForChild("ReactLobbyHud", 30)
+    local frame = lobby_hud and lobby_hud:WaitForChild("Frame", 30)
+    local match_making = frame and frame:WaitForChild("matchmaking", 30)
+
+    if match_making then
     local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
     local success = false
     local res
+        repeat
+            local ok, result = pcall(function()
+                if difficulty == "Hardcore" then
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
+                        mode = "hardcore",
+                        count = 1
+                    })
+                else
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
+                        difficulty = difficulty,
+                        mode = "survival",
+                        count = 1
+                    })
+                end
+            end)
 
-    repeat
-        local ok, result = pcall(function()
-            if difficulty == "Hardcore" then
-                return remote:InvokeServer("Multiplayer", "v2:start", {
-                    mode = "hardcore",
-                    count = 1
-                })
+            if ok and check_res_ok(result) then
+                success = true
+                res = result
             else
-                return remote:InvokeServer("Multiplayer", "v2:start", {
-                    difficulty = difficulty,
-                    mode = "survival",
-                    count = 1
-                })
+                task.wait(0.5) 
             end
-        end)
-
-        if ok and check_res_ok(result) then
-            success = true
-            res = result
-        else
-            task.wait(0.5) 
-        end
-    until success
+        until success
+    end
 
     return true
 end
@@ -594,14 +616,21 @@ function TDS:Loadout(...)
     if game_state ~= "LOBBY" then 
         return false 
     end
-    local towers = {...}
-    local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
-    for _, tower_name in ipairs(towers) do
-        if tower_name and tower_name ~= "" then
-            pcall(function()
-                remote:InvokeServer("Inventory", "Equip", "tower", tower_name)
-            end)
-            task.wait(0.5)
+
+    local lobby_hud = player_gui:WaitForChild("ReactLobbyHud", 30)
+    local frame = lobby_hud and lobby_hud:WaitForChild("Frame", 30)
+    local match_making = frame and frame:WaitForChild("matchmaking", 30)
+
+    if match_making then
+        local towers = {...}
+        local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
+        for _, tower_name in ipairs(towers) do
+            if tower_name and tower_name ~= "" then
+                pcall(function()
+                    remote:InvokeServer("Inventory", "Equip", "tower", tower_name)
+                end)
+                task.wait(0.5)
+            end
         end
     end
 end
@@ -617,14 +646,14 @@ end
 
 function TDS:GameInfo(name, list)
     list = list or {}
+    if game_state ~= "GAME" then return false end
 
-    if game_state ~= "GAME" then 
-        return false 
+    local vote_gui = player_gui:WaitForChild("ReactGameIntermission", 30)
+
+    if vote_gui and vote_gui.Enabled and vote_gui:WaitForChild("Frame", 5) then
+        cast_modifier_vote(list)
+        select_map_override(name)
     end
-    task.wait(15)
-
-    cast_modifier_vote(list)
-    select_map_override(name)
 end
 
 function TDS:UnlockTimeScale()
