@@ -719,7 +719,11 @@ function TDS:Upgrade(idx, p_id)
     end
 end
 
-function TDS:SetTarget(idx, target_type)
+function TDS:SetTarget(idx, target_type, req_wave)
+    if req_wave then
+        repeat task.wait(0.5) until get_current_wave() >= req_wave
+    end
+
     local t = self.placed_towers[idx]
     if not t then return end
 
@@ -731,7 +735,10 @@ function TDS:SetTarget(idx, target_type)
     end)
 end
 
-function TDS:Sell(idx)
+function TDS:Sell(idx, req_wave)
+    if req_wave then
+        repeat task.wait(0.5) until get_current_wave() >= req_wave
+    end
     local t = self.placed_towers[idx]
     if t and do_sell_tower(t) then
         table.remove(self.placed_towers, idx)
@@ -800,10 +807,10 @@ function TDS:AutoChain(...)
     end
 end
 
-function TDS:SetOption(idx, name, val, wave)
+function TDS:SetOption(idx, name, val, req_wave)
     local t = self.placed_towers[idx]
     if t then
-        return do_set_option(t, name, val, wave)
+        return do_set_option(t, name, val, req_wave)
     end
     return false
 end
