@@ -645,7 +645,10 @@ function TDS:TeleportToLobby()
     send_to_lobby()
 end
 
-function TDS:VoteSkip()
+function TDS:VoteSkip(req_wave)
+    if req_wave then
+        repeat task.wait(0.5) until get_current_wave() >= req_wave
+    end
     run_vote_skip()
 end
 
