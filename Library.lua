@@ -36,6 +36,7 @@ local player_gui = local_player:WaitForChild("PlayerGui")
 local back_to_lobby_running = false
 local auto_snowballs_running = false
 local auto_skip_running = false
+local anti_lag_running = false
 
 -- // icon item ids ill add more soon arghh
 local ItemNames = {
@@ -779,7 +780,7 @@ local function get_root()
     return char and char:FindFirstChild("HumanoidRootPart")
 end
 
-local function startAutoSnowballs()
+local function start_auto_snowballs()
     if auto_snowballs_running or not _G.AutoSnowballs then return end
     auto_snowballs_running = true
 
@@ -811,7 +812,7 @@ local function startAutoSnowballs()
     end)
 end
 
-local function startAutoSkip()
+local function start_auto_skip()
     if auto_skip_running or not _G.AutoSkip then return end
     auto_skip_running = true
 
@@ -834,7 +835,7 @@ local function startAutoSkip()
     end)
 end
 
-local function StartBackToLobbyLoop()
+local function start_back_to_lobby()
     if back_to_lobby_running then return end
     back_to_lobby_running = true
 
@@ -849,8 +850,46 @@ local function StartBackToLobbyLoop()
     end)
 end
 
-StartBackToLobbyLoop()
-startAutoSkip()
-startAutoSnowballs()
+local function start_anit_lag()
+    if anti_lag_running then return end
+    anti_lag_running = true
+
+    task.spawn(function()
+        while _G.AntiLag do
+            local towers_folder = workspace:FindFirstChild("Towers")
+            local client_units = workspace:FindFirstChild("ClientUnits")
+            local enemies = workspace:FindFirstChild("NPCs")
+
+            if towers_folder then
+                for _, tower in ipairs(towers_folder:GetChildren()) do
+                    local anims = tower:FindFirstChild("Animations")
+                    local weapon = tower:FindFirstChild("Weapon")
+                    local projectiles = tower:FindFirstChild("Projectiles")
+                    
+                    if anims then anims:Destroy() end
+                    if projectiles then projectiles:Destroy() end
+                    if weapon then weapon:Destroy() end
+                end
+            end
+            if client_units then
+                for _, unit in ipairs(client_units:GetChildren()) do
+                    unit:Destroy()
+                end
+            end
+            if enemies then
+                for _, npc in ipairs(enemies:GetChildren()) do
+                    npc:Destroy()
+                end
+            end
+            task.wait(0.5)
+        end
+        anti_lag_running = false
+    end)
+end
+
+start_back_to_lobby()
+start_auto_skip()
+start_auto_snowballs()
+start_anit_lag()
 
 return TDS
