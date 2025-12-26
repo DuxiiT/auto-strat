@@ -557,23 +557,36 @@ function TDS:Mode(difficulty)
     if game_state ~= "LOBBY" then 
         return false 
     end
+
     local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
-    local ok, res = pcall(function()
-        if difficulty == "Hardcore" then
-            return remote:InvokeServer("Multiplayer", "v2:start", {
-                mode = "hardcore",
-                count = 1
-            })
+    local success = false
+    local res
+
+    repeat
+        local ok, result = pcall(function()
+            if difficulty == "Hardcore" then
+                return remote:InvokeServer("Multiplayer", "v2:start", {
+                    mode = "hardcore",
+                    count = 1
+                })
+            else
+                return remote:InvokeServer("Multiplayer", "v2:start", {
+                    difficulty = difficulty,
+                    mode = "survival",
+                    count = 1
+                })
+            end
+        end)
+
+        if ok and check_res_ok(result) then
+            success = true
+            res = result
         else
-            return remote:InvokeServer("Multiplayer", "v2:start", {
-                difficulty = difficulty,
-                mode = "survival",
-                count = 1
-            })
+            task.wait(0.5) 
         end
-    end)
-    
-    return ok and check_res_ok(res)
+    until success
+
+    return true
 end
 
 function TDS:Loadout(...)
