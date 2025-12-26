@@ -677,6 +677,10 @@ function TDS:Ready()
     match_ready_up()
 end
 
+function TDS:GetWave()
+    return get_current_wave()
+end
+
 function TDS:RestartGame()
     trigger_restart()
 end
