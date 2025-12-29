@@ -64,14 +64,16 @@ local TDS = {
 }
 
 -- \\ cleanup placed towers on removal
-workspace.Towers.ChildRemoved:Connect(function(tower)
-    for uid, stored in pairs(TDS.placed_towers) do
-        if stored == tower then
-            TDS.placed_towers[uid] = nil
-            break
+if identify_game_state ~= "GAME" then
+    workspace.Towers.ChildRemoved:Connect(function(tower)
+        for uid, stored in pairs(TDS.placed_towers) do
+            if stored == tower then
+                TDS.placed_towers[uid] = nil
+                break
+            end
         end
-    end
-end)
+    end)
+end
 
 local upgrade_history = {}
 
@@ -761,9 +763,6 @@ function TDS:Place(t_name, px, py, pz)
     local start = os.clock()
 
     repeat
-        if identify_game_state() == "GAME" then
-            return false
-        end
         for _, tower in ipairs(workspace.Towers:GetChildren()) do
             if not existing[tower] then
                 local owner = tower:FindFirstChild("Owner")
