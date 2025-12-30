@@ -654,16 +654,18 @@ end
 function TDS:Addons()
     local url = "https://api.junkie-development.de/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     local success, code = pcall(game.HttpGet, game, url)
-    
-    if success then
-        loadstring(code)()
-        
-        repeat 
-            task.wait(0.5) 
-        until TDS.Equip
-        
-        return true
+
+    if not success then
+        return false
     end
+
+    loadstring(code)()
+
+    while not TDS.Equip do
+        task.wait(0.1)
+    end
+
+    return true
 end
 
 -- ingame
