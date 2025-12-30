@@ -140,6 +140,13 @@ local function get_all_rewards()
         results.Level = level_value.Value or 0
     end
 
+    local label = player_gui:WaitForChild("ReactGameTopGameDisplay").Frame.wave.container.value
+    local wave_num = label.Text:match("^(%d+)")
+
+    if wave_num then
+        results.Wave = tonumber(wave_num) or 0
+    end
+
     local section_rewards = rewards_screen and rewards_screen:FindFirstChild("RewardsSection")
     if section_rewards then
         for _, item in ipairs(section_rewards:GetChildren()) do
@@ -162,8 +169,6 @@ local function get_all_rewards()
                         elseif text:lower():find("x%d+") then 
                             local displayName = ItemNames[icon_id] or "Unknown Item (" .. icon_id .. ")"
                             table.insert(results.Others, {Amount = text:match("x%d+"), Name = displayName})
-                        elseif text:find("Wave") or text:find("Waves") then
-                            results.Wave = amt
                         end
                     end
                 end
@@ -224,7 +229,7 @@ local function handle_post_match()
                 "> **Status:** `" .. match.Status .. "`\n" ..
                 "> **Time:** `" .. match.Time .. "`\n" ..
                 "> **Current Level:** `" .. match.Level .. "`\n" ..
-                "> **Waves:** `" .. match.Wave .. "`\n",
+                "> **Wave:** `" .. match.Wave .. "`\n",
                 
             fields = {
                 {
