@@ -103,7 +103,7 @@ local function get_all_rewards()
         Coins = 0, 
         Gems = 0, 
         XP = 0, 
-        Wave = 0,
+        Wave = "0",
         Level = 0,
         Time = "00:00",
         Status = "UNKNOWN",
@@ -136,8 +136,7 @@ local function get_all_rewards()
 
     if wave_label and wave_label:FindFirstChild("textLabel") then
         local wave_txt = wave_label.textLabel.Text
-        local wave_num = tonumber(wave_txt:match("^(%d+)")) or 0
-        results.Wave = wave_num
+        results.Wave = wave_txt
     end
 
     local top_banner = rewards_screen and rewards_screen:FindFirstChild("RewardBanner")
@@ -1049,10 +1048,21 @@ local function start_anti_afk()
     end)
 end
 
+local function start_rejoin_on_disconnect()
+    task.spawn(function()
+        game.Players.PlayerRemoving:connect(function (plr)
+            if plr == game.Players.LocalPlayer then
+                game:GetService('TeleportService'):Teleport(3260590327, plr)
+            end
+        end)
+    end)
+end
+
 start_back_to_lobby()
 start_auto_skip()
 start_auto_pickups()
 start_anti_lag()
 start_anti_afk()
+start_rejoin_on_disconnect()
 
 return TDS

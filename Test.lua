@@ -64,6 +64,7 @@ local TDS = {
     placed_towers = {},
     active_strat = true
 }
+
 local upgrade_history = {}
 
 -- // shared for addons
@@ -102,6 +103,8 @@ local function get_all_rewards()
         Coins = 0, 
         Gems = 0, 
         XP = 0, 
+        Wave = 0,
+        Level = 0,
         Time = "00:00",
         Status = "UNKNOWN",
         Others = {} 
@@ -126,10 +129,26 @@ local function get_all_rewards()
         end
     end
 
+    local wave_label = local_player.PlayerGui.ReactGameTopGameDisplay:FindFirstChild("Frame")
+        and local_player.PlayerGui.ReactGameTopGameDisplay.Frame:FindFirstChild("wave")
+        and local_player.PlayerGui.ReactGameTopGameDisplay.Frame.wave:FindFirstChild("container")
+        and local_player.PlayerGui.ReactGameTopGameDisplay.Frame.wave.container:FindFirstChild("value")
+
+    if wave_label and wave_label:FindFirstChild("textLabel") then
+        local wave_txt = wave_label.textLabel.Text
+        local wave_num = tonumber(wave_txt:match("^(%d+)")) or 0
+        results.Wave = wave_num
+    end
+
     local top_banner = rewards_screen and rewards_screen:FindFirstChild("RewardBanner")
     if top_banner and top_banner:FindFirstChild("textLabel") then
         local txt = top_banner.textLabel.Text:upper()
         results.Status = txt:find("TRIUMPH") and "WIN" or (txt:find("LOST") and "LOSS" or "UNKNOWN")
+    end
+
+    local level_value = local_player.Level
+    if level_value then
+        results.Level = level_value.Value or 0
     end
 
     local section_rewards = rewards_screen and rewards_screen:FindFirstChild("RewardsSection")
@@ -209,9 +228,13 @@ local function handle_post_match()
         embeds = {{
             title = (match.Status == "WIN" and "🏆 TRIUMPH" or "💀 DEFEAT"),
             color = (match.Status == "WIN" and 0x2ecc71 or 0xe74c3c),
-            description = "### 📋 Match Overview\n" ..
-                          "> **Status:** `" .. match.Status .. "`\n" ..
-                          "> **Time:** `" .. match.Time .. "`",
+            description =
+                "### 📋 Match Overview\n" ..
+                "> **Status:** `" .. match.Status .. "`\n" ..
+                "> **Time:** `" .. match.Time .. "`\n" ..
+                "> **Current Level:** `" .. match.Level .. "`\n" ..
+                "> **Waves:** `" .. match.Wave .. "`\n",
+
             fields = {
                 {
                     name = "✨ Rewards",
@@ -251,43 +274,45 @@ end
 
 local function log_match_start()
     if not _G.SendWebhook then return end
-
+    if type(_G.Webhook) ~= "string" or _G.Webhook == "" then return end
+    if _G.Webhook:find("YOUR%-WEBHOOK") then return end
+    
     local start_payload = {
         username = "TDS AutoStrat",
         embeds = {{
             title = "🚀 **Match Started Successfully**",
             description = "The AutoStrat has successfully loaded into a new game session and is beginning execution.",
             color = 3447003,
-            
             fields = {
-                { 
-                    name = "🪙 Starting Coins", 
-                    value = "```" .. tostring(start_coins) .. " Coins```", 
-                    inline = true 
+                {
+                    name = "🪙 Starting Coins",
+                    value = "```" .. tostring(start_coins) .. " Coins```",
+                    inline = true
                 },
-                { 
-                    name = "💎 Starting Gems", 
-                    value = "```" .. tostring(start_gems) .. " Gems```", 
-                    inline = true 
+                {
+                    name = "💎 Starting Gems",
+                    value = "```" .. tostring(start_gems) .. " Gems```",
+                    inline = true
                 },
-                { 
-                    name = "Status", 
-                    value = "🟢 Running Script", 
-                    inline = false 
+                {
+                    name = "Status",
+                    value = "🟢 Running Script",
+                    inline = false
                 }
             },
-            
             footer = { text = "Logged for " .. local_player.Name .. " • TDS AutoStrat" },
             timestamp = DateTime.now():ToIsoDate()
         }}
     }
 
-    send_request({
-        Url = _G.Webhook,
-        Method = "POST",
-        Headers = { ["Content-Type"] = "application/json" },
-        Body = game:GetService("HttpService"):JSONEncode(start_payload)
-    })
+    pcall(function()
+        send_request({
+            Url = _G.Webhook,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = game:GetService("HttpService"):JSONEncode(start_payload)
+        })
+    end)
 end
 
 -- // voting & map selection
@@ -604,7 +629,7 @@ function TDS:Mode(difficulty)
                     })
                 elseif difficulty == "Polluted" then
                     return remote:InvokeServer("Multiplayer", "v2:start", {
-                        mode = "Polluted",
+                        mode = "polluted",
                         count = 1
                     })
                 else
@@ -661,6 +686,9 @@ function TDS:Loadout(...)
 end
 
 function TDS:Addons()
+    if game_state ~= "GAME" then
+        return false
+    end
     local url = "https://api.junkie-development.de/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     local success, code = pcall(game.HttpGet, game, url)
 
@@ -714,6 +742,9 @@ function TDS:StartGame()
 end
 
 function TDS:Ready()
+    if game_state ~= "GAME" then
+        return false 
+    end
     match_ready_up()
 end
 
@@ -729,9 +760,15 @@ function TDS:Place(t_name, px, py, pz)
     if game_state ~= "GAME" then
         return false 
     end
+    
     local existing = {}
     for _, child in ipairs(workspace.Towers:GetChildren()) do
-        existing[child] = true
+        for _, sub_child in ipairs(child:GetChildren()) do
+            if sub_child.Name == "Owner" and sub_child.Value == local_player.UserId then
+                existing[child] = true
+                break
+            end
+        end
     end
 
     do_place_tower(t_name, Vector3.new(px, py, pz))
@@ -740,9 +777,14 @@ function TDS:Place(t_name, px, py, pz)
     repeat
         for _, child in ipairs(workspace.Towers:GetChildren()) do
             if not existing[child] then
-                new_t = child
-                break
+                for _, sub_child in ipairs(child:GetChildren()) do
+                    if sub_child.Name == "Owner" and sub_child.Value == local_player.UserId then
+                        new_t = child
+                        break
+                    end
+                end
             end
+            if new_t then break end
         end
         task.wait(0.05)
     until new_t
@@ -823,10 +865,10 @@ function TDS:AutoChain(...)
         local i = 1
         while running do
             local idx = tower_indices[i]
-            local tower = self.placed_towers[idx]
+            local tower = TDS.placed_towers[idx]
 
             if tower then
-                do_activate_ability(tower, "Call to Arms")
+                do_activate_ability(tower, "Call Of Arms")
             end
 
             local hotbar = player_gui.ReactUniversalHotbar.Frame
