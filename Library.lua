@@ -62,12 +62,7 @@ local ItemNames = {
 -- // tower management core
 local TDS = {
     placed_towers = {},
-    active_strat = true,
-    matchmaking_map = {
-        ["Hardcore"] = "hardcore",
-        ["Pizza Party"] = "halloween",
-        ["Polluted"] = "polluted"
-    }
+    active_strat = true
 }
 
 local upgrade_history = {}
@@ -620,24 +615,28 @@ function TDS:Mode(difficulty)
     local res
         repeat
             local ok, result = pcall(function()
-                local mode = TDS.matchmaking_map[difficulty]
-
-                local payload
-
-                if mode then
-                    payload = {
-                        mode = mode,
+                if difficulty == "Hardcore" then
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
+                        mode = "hardcore",
                         count = 1
-                    }
+                    })
+                elseif difficulty == "Pizza Party" then
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
+                        mode = "halloween",
+                        count = 1
+                    })
+                elseif difficulty == "Polluted" then
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
+                        mode = "polluted",
+                        count = 1
+                    })
                 else
-                    payload = {
+                    return remote:InvokeServer("Multiplayer", "v2:start", {
                         difficulty = difficulty,
                         mode = "survival",
                         count = 1
-                    }
+                    })
                 end
-
-                return remote:InvokeServer("Multiplayer", "v2:start", payload)
             end)
 
             if ok and check_res_ok(result) then
@@ -703,6 +702,9 @@ function TDS:Loadout(...)
 end
 
 function TDS:Addons()
+    if game_state ~= "GAME" then
+        return false
+    end
     local url = "https://api.junkie-development.de/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     local success, code = pcall(game.HttpGet, game, url)
 
@@ -712,7 +714,7 @@ function TDS:Addons()
 
     loadstring(code)()
 
-    while not (TDS.Equip and TDS.MultiMode and TDS.Multiplayer) do
+    while not TDS.Equip do
         task.wait(0.1)
     end
 
@@ -790,14 +792,7 @@ function TDS:RestartGame()
     trigger_restart()
 end
 
-function TDS:Place(t_name, px, py, pz, ...)
-    local args = {...}
-    local stack = false
-
-    if args[#args] == "stack" or args[#args] == true then
-        py = 95
-    end
-
+function TDS:Place(t_name, px, py, pz)
     if game_state ~= "GAME" then
         return false 
     end
