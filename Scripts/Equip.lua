@@ -16,7 +16,6 @@ local function normalize(s)
 end
 
 local Normalized = {}
-
 for _, name in ipairs(Towers) do
     Normalized[#Normalized + 1] = {
         raw = name,
@@ -26,31 +25,18 @@ for _, name in ipairs(Towers) do
 end
 
 local function resolveTower(input)
+    if input == "" then return end
     local n = normalize(input)
 
     for _, t in ipairs(Normalized) do
-        if t.norm == n then
-            return t.raw
-        end
+        if t.norm == n then return t.raw end
     end
-
     for _, t in ipairs(Normalized) do
-        if t.norm:sub(1, #n) == n then
-            return t.raw
-        end
+        if t.norm:sub(1, #n) == n then return t.raw end
     end
-
     for _, t in ipairs(Normalized) do
         for _, w in ipairs(t.words) do
-            if w:sub(1, #n) == n then
-                return t.raw
-            end
-        end
-    end
-
-    for _, t in ipairs(Normalized) do
-        if t.norm:find(n, 1, true) then
-            return t.raw
+            if w:sub(1, #n) == n then return t.raw end
         end
     end
 end
@@ -58,47 +44,40 @@ end
 local TDS = {}
 shared.TDS_Table = TDS
 
-local function identify_game_state()
-    local p = game:GetService("Players").LocalPlayer
-    local g = p:WaitForChild("PlayerGui")
-    while true do
-        if g:FindFirstChild("LobbyGui") then
-            return "LOBBY"
-        elseif g:FindFirstChild("GameGui") then
-            return "GAME"
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+local function waitForGame()
+    if PlayerGui:FindFirstChild("GameGui") then return true end
+    local conn
+    conn = PlayerGui.ChildAdded:Connect(function(c)
+        if c.Name == "GameGui" then
+            conn:Disconnect()
         end
-        task.wait(1)
-    end
+    end)
+    repeat task.wait() until PlayerGui:FindFirstChild("GameGui")
+    return true
 end
 
 function TDS:Addons()
-    if identify_game_state() ~= "GAME" then
-        return false
-    end
+    if not waitForGame() then return false end
 
     local ok, code = pcall(game.HttpGet, game,
         "https://api.junkie-development.de/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     )
-    if not ok then
-        return false
-    end
+    if not ok then return false end
 
     loadstring(code)()
 
     local start = os.clock()
-    while not TDS.Equip do
-        if os.clock() - start > 10 then
-            return false
-        end
+    repeat
+        if os.clock() - start > 8 then return false end
         task.wait()
-    end
+    until TDS.Equip
 
     return true
 end
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
 
 if PlayerGui:FindFirstChild("EquipTowerGUI") then
     PlayerGui.EquipTowerGUI:Destroy()
@@ -149,13 +128,12 @@ task.spawn(function()
 end)
 
 textbox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and TDS.Equip then
-        local tower = resolveTower(textbox.Text)
-        if tower then
-            pcall(TDS.Equip, TDS, tower)
-        end
-        textbox.Text = ""
+    if not enterPressed or not TDS.Equip then return end
+    local tower = resolveTower(textbox.Text)
+    if tower then
+        pcall(TDS.Equip, TDS, tower)
     end
+    textbox.Text = ""
 end)
 
 return TDS
