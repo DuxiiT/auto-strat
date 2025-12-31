@@ -150,11 +150,11 @@ end)
 
 textbox.FocusLost:Connect(function(enterPressed)
     if enterPressed and TDS.Equip then
-        local tower = resolveTower(buffer)
+        local tower = resolveTower(textbox.Text)
         if tower then
             pcall(TDS.Equip, TDS, tower)
         end
-        buffer = ""
+        textbox.Text = ""
     end
 end)
 
