@@ -141,13 +141,6 @@ textbox.Text = ""
 textbox.Parent = frame
 Instance.new("UICorner", textbox).CornerRadius = UDim.new(0, 4)
 
-local buffer = ""
-
-textbox:GetPropertyChangedSignal("Text"):Connect(function()
-    buffer = textbox.Text
-    textbox.Text = ""
-end)
-
 task.spawn(function()
     if TDS:Addons() then
         textbox.PlaceholderText = "Type tower name..."
