@@ -32,6 +32,8 @@ local remote_event = replicated_storage:WaitForChild("RemoteEvent")
 local players_service = game:GetService("Players")
 local local_player = players_service.LocalPlayer or players_service.PlayerAdded:Wait()
 local player_gui = local_player:WaitForChild("PlayerGui")
+local teleport_service = game:GetService("TeleportService")
+local marketplace_service = game:GetService("MarketplaceService")
 
 local back_to_lobby_running = false
 local auto_pickups_running = false
@@ -471,6 +473,18 @@ local function get_current_wave()
     return tonumber(wave_num) or 0
 end
 
+local function is_map_available(name)
+    for _, g in ipairs(workspace:GetDescendants()) do
+        if g:IsA("SurfaceGui") and g.Name == "MapDisplay" then
+            local t = g:FindFirstChild("Title")
+            if t and t.Text == name then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 local function do_place_tower(t_name, t_pos)
     while true do
         local ok, res = pcall(function()
@@ -758,10 +772,16 @@ function TDS:GameInfo(name, list)
     if game_state ~= "GAME" then return false end
 
     local vote_gui = player_gui:WaitForChild("ReactGameIntermission", 30)
+    if not (vote_gui and vote_gui.Enabled and vote_gui:WaitForChild("Frame", 5)) then return end
 
-    if vote_gui and vote_gui.Enabled and vote_gui:WaitForChild("Frame", 5) then
-        cast_modifier_vote(list)
+    cast_modifier_vote(list)
+
+    if marketplace_service:UserOwnsGamePassAsync(local_player.UserId, 10518590) then
         select_map_override(name)
+    elseif is_map_available(name) then
+        select_map_override(name)
+    else
+        teleport_service:Teleport(3260590327, local_player)
     end
 end
 
