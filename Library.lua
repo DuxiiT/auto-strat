@@ -746,7 +746,7 @@ function TDS:TeleportToLobby()
     send_to_lobby()
 end
 
-function TDS:vote_skip(start_wave, end_wave)
+function TDS:VoteSkip(start_wave, end_wave)
     task.spawn(function()
         local current_wave = get_current_wave()
         start_wave = start_wave or current_wave
