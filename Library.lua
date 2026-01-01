@@ -746,7 +746,7 @@ function TDS:TeleportToLobby()
     send_to_lobby()
 end
 
-function TDS:VoteSkip(start_wave, end_wave)
+function TDS:vote_skip(start_wave, end_wave)
     task.spawn(function()
         local current_wave = get_current_wave()
         start_wave = start_wave or current_wave
@@ -755,23 +755,28 @@ function TDS:VoteSkip(start_wave, end_wave)
         for wave = start_wave, end_wave do
             repeat
                 task.wait(0.5)
-            until get_current_wave() >= wave
+            until get_current_wave() == wave
 
             repeat
-                local voteGui = player_gui:FindFirstChild("ReactOverridesVote")
-                local voteButton =
-                    voteGui
-                    and voteGui:FindFirstChild("Frame")
-                    and voteGui.Frame:FindFirstChild("votes")
-                    and voteGui.Frame.votes:FindFirstChild("vote")
+                local vote_gui = player_gui:FindFirstChild("ReactOverridesVote")
+                local vote_button = 
+                    vote_gui 
+                    and vote_gui:FindFirstChild("Frame") 
+                    and vote_gui.Frame:FindFirstChild("votes") 
+                    and vote_gui.Frame.votes:FindFirstChild("vote")
 
-                if voteButton then
+                if vote_button then
                     run_vote_skip()
+                    
+                    repeat 
+                        task.wait(0.5) 
+                    until get_current_wave() > wave
+                    
                     break
                 end
 
-                task.wait(0.2)
-            until false
+                task.wait(0.5)
+            until get_current_wave() > wave
         end
     end)
 end
