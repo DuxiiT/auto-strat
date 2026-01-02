@@ -68,6 +68,7 @@ local TDS = {
     matchmaking_map = {
         ["Hardcore"] = "hardcore",
         ["Pizza Party"] = "halloween",
+        ["Badlands"] = "badlands",
         ["Polluted"] = "polluted"
     }
 }
@@ -320,6 +321,83 @@ local function log_match_start()
     end)
 end
 
+local MaxLogs = 35
+local Logs = {}
+
+local ColorMap = {
+    green = "#2BFFAE",
+    red = "#FF3A3A",
+    orange = "#FFA500",
+    yellow = "#FFF300",
+}
+
+local function classifyColor(text)
+    local t = text:lower()
+
+    if t:find("error")
+        or t:find("failed")
+        or t:find("invalid")
+        or t:find("missing")
+        or t:find("cannot")
+        or t:find("nil")
+        or t:find("no ") then
+        return "red"
+    end
+
+    if t:find("warning")
+        or t:find("issue")
+        or t:find("retry")
+        or t:find("skipped")
+        or t:find("delay") then
+        return "orange"
+    end
+
+    if t:find("loaded")
+        or t:find("detected")
+        or t:find("updated")
+        or t:find("adjusted")
+        or t:find("processing") then
+        return "yellow"
+    end
+
+    return "green"
+end
+
+local TDS = Instance.new("ScreenGui") local bckpattern = Instance.new("ImageLabel") local UICorner = Instance.new("UICorner") local Tab1 = Instance.new("Frame") local Consoleframe = Instance.new("Frame") local shadowHolder = Instance.new("Frame") local umbraShadow = Instance.new("ImageLabel") local penumbraShadow = Instance.new("ImageLabel") local ambientShadow = Instance.new("ImageLabel") local Console = Instance.new("ScrollingFrame") local UIListLayout = Instance.new("UIListLayout") local TextLabel = Instance.new("TextLabel")  TDS.Name = "TDS" TDS.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui") TDS.ZIndexBehavior = Enum.ZIndexBehavior.Sibling TDS.ResetOnSpawn = false  bckpattern.Name = "bckpattern" bckpattern.Parent = TDS bckpattern.Active = true bckpattern.BackgroundColor3 = Color3.fromRGB(255, 255, 255) bckpattern.BorderColor3 = Color3.fromRGB(0, 0, 0) bckpattern.BorderSizePixel = 0 bckpattern.Draggable = true bckpattern.Position = UDim2.new(0.253089815, 0, 0.195836768, 0) bckpattern.Size = UDim2.new(0.492764741, 0, 0.607694149, 0) bckpattern.Image = "rbxassetid://118045968280960" bckpattern.ImageColor3 = Color3.fromRGB(13, 13, 13) bckpattern.ScaleType = Enum.ScaleType.Crop  UICorner.Parent = bckpattern  Tab1.Name = "Tab1" Tab1.Parent = bckpattern Tab1.BackgroundColor3 = Color3.fromRGB(255, 255, 255) Tab1.BackgroundTransparency = 1.000 Tab1.BorderColor3 = Color3.fromRGB(0, 0, 0) Tab1.BorderSizePixel = 0 Tab1.Position = UDim2.new(0, 0, -0.00292714359, 0) Tab1.Size = UDim2.new(1.00364339, 0, 1.00066507, 0)  Consoleframe.Name = "Consoleframe" Consoleframe.Parent = Tab1 Consoleframe.BackgroundColor3 = Color3.fromRGB(21, 21, 21) Consoleframe.BorderColor3 = Color3.fromRGB(0, 0, 0) Consoleframe.BorderSizePixel = 0 Consoleframe.Position = UDim2.new(0.044511538, 0, 0.172486231, 0) Consoleframe.Size = UDim2.new(0.905291438, 0, 0.779315889, 0)  shadowHolder.Name = "shadowHolder" shadowHolder.Parent = Consoleframe shadowHolder.AnchorPoint = Vector2.new(0.5, 0.5) shadowHolder.BackgroundTransparency = 1.000 shadowHolder.Position = UDim2.new(0.5, 0, 0.498007327, 0) shadowHolder.Size = UDim2.new(1, 0, 0.996014893, 0) shadowHolder.ZIndex = 0  umbraShadow.Name = "umbraShadow" umbraShadow.Parent = shadowHolder umbraShadow.AnchorPoint = Vector2.new(0.5, 0.5) umbraShadow.BackgroundTransparency = 1.000 umbraShadow.Position = UDim2.new(0.5, 0, 0.497237176, 0) umbraShadow.Size = UDim2.new(1, 0, 0.994474649, 0) umbraShadow.ZIndex = 0 umbraShadow.Image = "rbxassetid://1316045217" umbraShadow.ImageColor3 = Color3.fromRGB(0, 0, 0) umbraShadow.ImageTransparency = 0.880 umbraShadow.ScaleType = Enum.ScaleType.Slice umbraShadow.SliceCenter = Rect.new(10, 10, 118, 118)  penumbraShadow.Name = "penumbraShadow" penumbraShadow.Parent = shadowHolder penumbraShadow.AnchorPoint = Vector2.new(0.5, 0.5) penumbraShadow.BackgroundTransparency = 1.000 penumbraShadow.Position = UDim2.new(0.527461469, 0, 0.504197001, 0) penumbraShadow.Size = UDim2.new(1, 0, 0.994474649, 0) penumbraShadow.ZIndex = 0 penumbraShadow.Image = "rbxassetid://1316045217" penumbraShadow.ImageColor3 = Color3.fromRGB(0, 0, 0) penumbraShadow.ImageTransparency = 0.880 penumbraShadow.ScaleType = Enum.ScaleType.Slice penumbraShadow.SliceCenter = Rect.new(10, 10, 118, 118)  ambientShadow.Name = "ambientShadow" ambientShadow.Parent = shadowHolder ambientShadow.AnchorPoint = Vector2.new(0.5, 0.5) ambientShadow.BackgroundTransparency = 1.000 ambientShadow.Position = UDim2.new(0.5, 0, 0.497237176, 0) ambientShadow.Size = UDim2.new(1, 0, 0.994474649, 0) ambientShadow.Visible = false ambientShadow.ZIndex = 0 ambientShadow.Image = "rbxassetid://1316045217" ambientShadow.ImageColor3 = Color3.fromRGB(0, 0, 0) ambientShadow.ImageTransparency = 0.880 ambientShadow.ScaleType = Enum.ScaleType.Slice ambientShadow.SliceCenter = Rect.new(10, 10, 118, 118)  Console.Name = "Console" Console.Parent = Consoleframe Console.Active = true Console.AnchorPoint = Vector2.new(0.5, 0.5) Console.BackgroundColor3 = Color3.fromRGB(255, 255, 255) Console.BackgroundTransparency = 1.000 Console.BorderColor3 = Color3.fromRGB(0, 0, 0) Console.BorderSizePixel = 0 Console.Position = UDim2.new(0.5, 0, 0.498007327, 0) Console.Size = UDim2.new(1, 0, 0.996014893, 0) Console.ScrollBarThickness = 1  UIListLayout.Parent = Console UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder  TextLabel.Parent = Tab1 TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255) TextLabel.BackgroundTransparency = 1.000 TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0) TextLabel.BorderSizePixel = 0 TextLabel.Position = UDim2.new(0.331475258, 0, 0.02972183, 0) TextLabel.Size = UDim2.new(0.315564454, 0, 0.110747874, 0) TextLabel.Font = Enum.Font.SourceSansSemibold TextLabel.Text = "Pure Strategy" TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255) TextLabel.TextScaled = true TextLabel.TextSize = 14.000 TextLabel.TextWrapped = true TextLabel.TextXAlignment = Enum.TextXAlignment.Left TextLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+local function log(text, color)
+    color = color or classifyColor(text)
+    local hex = ColorMap[color] or ColorMap.green
+    local formatted = "<font color='" .. hex .. "'>" .. text .. "</font>"
+
+    local ConsoleLogExample = Instance.new("TextLabel")
+    ConsoleLogExample.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ConsoleLogExample.BackgroundTransparency = 1
+    ConsoleLogExample.BorderSizePixel = 0
+    ConsoleLogExample.Size = UDim2.new(1, -8, 0, 0) -- initial height 0
+    ConsoleLogExample.Font = Enum.Font.SourceSansSemibold
+    ConsoleLogExample.RichText = true
+    ConsoleLogExample.Text = formatted
+    ConsoleLogExample.TextSize = 14
+    ConsoleLogExample.TextWrapped = true
+    ConsoleLogExample.TextXAlignment = Enum.TextXAlignment.Left
+    ConsoleLogExample.TextYAlignment = Enum.TextYAlignment.Top
+    ConsoleLogExample.TextColor3 = Color3.fromRGB(255,255,255)
+    ConsoleLogExample.AutomaticSize = Enum.AutomaticSize.Y -- automatically size vertically
+    ConsoleLogExample.Parent = Console
+
+    table.insert(Logs, ConsoleLogExample)
+
+    if #Logs > MaxLogs then
+        Logs[1]:Destroy()
+        table.remove(Logs, 1)
+    end
+
+    task.wait()
+    Console.CanvasSize = UDim2.new(0,0,0,Console.UIListLayout.AbsoluteContentSize.Y)
+    Console.CanvasPosition = Vector2.new(0, Console.CanvasSize.Y.Offset)
+end
+
 -- // voting & map selection
 local function run_vote_skip()
     while true do
@@ -411,11 +489,37 @@ local function is_map_available(name)
     for _, g in ipairs(workspace:GetDescendants()) do
         if g:IsA("SurfaceGui") and g.Name == "MapDisplay" then
             local t = g:FindFirstChild("Title")
-            if t and t.Text == name then
-                return true
-            end
+            if t and t.Text == name then return true end
         end
     end
+
+    repeat
+        remote_event:FireServer("LobbyVoting", "Veto")
+        wait(1)
+
+        local found = false
+        for _, g in ipairs(workspace:GetDescendants()) do
+            if g:IsA("SurfaceGui") and g.Name == "MapDisplay" then
+                local t = g:FindFirstChild("Title")
+                if t and t.Text == name then
+                    found = true
+                    break
+                end
+            end
+        end
+
+        local total_player = #players_service:GetChildren()
+        local veto_text = player_gui:WaitForChild("ReactGameIntermission"):WaitForChild("Frame"):WaitForChild("buttons"):WaitForChild("veto"):WaitForChild("value").Text
+        
+    until found or veto_text == "Veto ("..total_player.."/"..total_player..")"
+
+    for _, g in ipairs(workspace:GetDescendants()) do
+        if g:IsA("SurfaceGui") and g.Name == "MapDisplay" then
+            local t = g:FindFirstChild("Title")
+            if t and t.Text == name then return true end
+        end
+    end
+
     return false
 end
 
@@ -464,9 +568,11 @@ local function unlock_speed_tickets()
     if local_player.TimescaleTickets.Value >= 1 then
         if game.Players.LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale.Lock.Visible then
             replicated_storage.RemoteFunction:InvokeServer('TicketsManager', 'UnlockTimeScale')
+            log("Unlocked timescale tickets", "yellow")
         end
     else
         warn("no tickets left")
+        log("No timescale tickets left", "red")
     end
 end
 
@@ -490,8 +596,12 @@ local function trigger_restart()
 end
 
 local function get_current_wave()
-    local label = player_gui:WaitForChild("ReactGameTopGameDisplay").Frame.wave.container.value
-    local wave_num = label.Text:match("^(%d+)")
+    local label = game:GetService("Players").LocalPlayer.PlayerGui
+        .ReactGameTopGameDisplay.Frame.wave.container.value
+
+    local text = label.Text
+    local wave_num = text:match("(%d+)")
+
     return tonumber(wave_num) or 0
 end
 
@@ -681,6 +791,7 @@ function TDS:Loadout(...)
                 repeat
                     local ok = pcall(function()
                         remote:InvokeServer("Inventory", "Equip", "tower", tower_name)
+                        log("Equipped tower: " .. tower_name, "green")
                     end)
                     if ok then
                         success = true
@@ -707,6 +818,7 @@ function TDS:Loadout(...)
             repeat
                 local ok = pcall(function()
                     remote:InvokeServer("Inventory", "Equip", "tower", tower_name)
+                    log("Equipped tower: " .. tower_name, "green")
                 end)
                 if ok then
                     success = true
@@ -722,9 +834,6 @@ function TDS:Loadout(...)
 end
 
 function TDS:Addons()
-    if game_state ~= "GAME" then
-        return false
-    end
     local url = "https://api.junkie-development.de/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     local success, code = pcall(game.HttpGet, game, url)
 
@@ -734,7 +843,7 @@ function TDS:Addons()
 
     loadstring(code)()
 
-    while not TDS.Equip do
+    while not TDS.Equip and TDS.MultiMode and TDS.Multiplayer do
         task.wait(0.1)
     end
 
@@ -749,7 +858,11 @@ end
 function TDS:VoteSkip(start_wave, end_wave)
     task.spawn(function()
         local current_wave = get_current_wave()
-        start_wave = current_wave or start_wave
+
+        if start_wave == nil then
+            start_wave = current_wave
+        end
+
         end_wave = end_wave or start_wave
 
         for wave = start_wave, end_wave do
@@ -767,6 +880,7 @@ function TDS:VoteSkip(start_wave, end_wave)
                 if skip_visible and skip_visible.Position == UDim2.new(0.5, 0, 0.5, 0) then
                     run_vote_skip()
                     skip_done = true
+                    log("Voted to skip wave " .. wave, "green")
                 else
                     task.wait(0.2)
                 end
@@ -786,6 +900,7 @@ function TDS:GameInfo(name, list)
 
     if marketplace_service:UserOwnsGamePassAsync(local_player.UserId, 10518590) then
         select_map_override(name, "vip")
+        log("Selected map: " .. name, "green")
     elseif is_map_available(name) then
         select_map_override(name)
     else
@@ -825,7 +940,7 @@ function TDS:Place(t_name, px, py, pz, ...)
     local stack = false
 
     if args[#args] == "stack" or args[#args] == true then
-        py = 95
+        py = py+20
     end
     if game_state ~= "GAME" then
         return false 
@@ -842,6 +957,7 @@ function TDS:Place(t_name, px, py, pz, ...)
     end
 
     do_place_tower(t_name, Vector3.new(px, py, pz))
+    log("Placing tower: " .. t_name, "green")
 
     local new_t
     repeat
@@ -867,6 +983,7 @@ function TDS:Upgrade(idx, p_id)
     local t = self.placed_towers[idx]
     if t then
         do_upgrade_tower(t, p_id or 1)
+        log("Upgrading tower index: " .. idx, "green")
         upgrade_history[idx] = (upgrade_history[idx] or 0) + 1
     end
 end
@@ -884,6 +1001,7 @@ function TDS:SetTarget(idx, target_type, req_wave)
             Troop = t,
             Target = target_type
         })
+        log("Set target for tower index " .. idx .. " to " .. target_type, "green")
     end)
 end
 
@@ -923,6 +1041,7 @@ end
 function TDS:Ability(idx, name, data, loop)
     local t = self.placed_towers[idx]
     if not t then return false end
+    log("Activating ability '" .. name .. "' for tower index: " .. idx, "green")
     return do_activate_ability(t, name, data, loop)
 end
 
@@ -970,6 +1089,7 @@ end
 function TDS:SetOption(idx, name, val, req_wave)
     local t = self.placed_towers[idx]
     if t then
+        log("Setting option '" .. name .. "' for tower index: " .. idx, "green")
         return do_set_option(t, name, val, req_wave)
     end
     return false

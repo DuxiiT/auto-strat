@@ -30,7 +30,7 @@ For detailed implementation of complex methods—including specific `data` strin
 ## 🎮 Match Control
 * **`TDS:GameInfo(map, modifiers)`** -- Selects the desired Map and Modifiers.
 * **`TDS:VoteSkip()`** – Sends a skip request with a built-in retry loop.
-* **`TDS:UseTimeScale(value)`** – Sets game speed (`0.5` to `2`). *Requires tickets.*
+* **`TDS:TimeScale(value)`** – Sets game speed (`0.5` to `2`). *Requires tickets.*
 
 ---
 
