@@ -1,4 +1,4 @@
-local TDS = Instance.new("ScreenGui")
+local TDSGui = Instance.new("ScreenGui")
 local bckpattern = Instance.new("ImageLabel")
 local UICorner = Instance.new("UICorner")
 local Tab1 = Instance.new("Frame")
@@ -11,13 +11,13 @@ local Console = Instance.new("ScrollingFrame")
 local UIListLayout = Instance.new("UIListLayout")
 local TextLabel = Instance.new("TextLabel")
 
-TDS.Name = "TDS"
-TDS.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-TDS.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-TDS.ResetOnSpawn = false
+TDSGui.Name = "TDSGui"
+TDSGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+TDSGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+TDSGui.ResetOnSpawn = false
 
 bckpattern.Name = "bckpattern"
-bckpattern.Parent = TDS
+bckpattern.Parent = TDSGui
 bckpattern.Active = true
 bckpattern.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 bckpattern.BorderColor3 = Color3.fromRGB(0, 0, 0)
