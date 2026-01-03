@@ -66,7 +66,7 @@ end
 local umbraShadow = createShadow(shadowHolder)
 local penumbraShadow = createShadow(shadowHolder)
 local ambientShadow = createShadow(shadowHolder)
-ambientShadow.Visible = true
+ambientShadow.Visible = false
 
 -- Console
 local Console = Instance.new("ScrollingFrame")
