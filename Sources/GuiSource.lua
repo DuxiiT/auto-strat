@@ -17,10 +17,6 @@ local bckpattern = Instance.new("ImageLabel")
 local UICorner = Instance.new("UICorner")
 local Tab1 = Instance.new("Frame")
 local Consoleframe = Instance.new("Frame")
-local shadowHolder = Instance.new("Frame")
-local umbraShadow = Instance.new("ImageLabel")
-local penumbraShadow = Instance.new("ImageLabel")
-local ambientShadow = Instance.new("ImageLabel")
 local Console = Instance.new("ScrollingFrame")
 local UIListLayout = Instance.new("UIListLayout")
 local TextLabel = Instance.new("TextLabel")
@@ -54,36 +50,6 @@ Consoleframe.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 Consoleframe.BorderSizePixel = 0
 Consoleframe.Position = UDim2.new(0.045, 0, 0.17, 0)
 Consoleframe.Size = UDim2.new(0.91, 0, 0.78, 0)
-
--- Shadows
-shadowHolder.Parent = Consoleframe
-shadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-shadowHolder.BackgroundTransparency = 1
-shadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
-shadowHolder.Size = UDim2.new(1, 0, 1, 0)
-
-umbraShadow.Parent = shadowHolder
-umbraShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-umbraShadow.BackgroundTransparency = 1
-umbraShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-umbraShadow.Size = UDim2.new(1.02, 0, 1.02, 0)
-umbraShadow.Image = "rbxassetid://1316045217"
-umbraShadow.ImageTransparency = 0.75
-umbraShadow.ScaleType = Enum.ScaleType.Slice
-umbraShadow.SliceCenter = Rect.new(10, 10, 118, 118)
-
-penumbraShadow.Parent = shadowHolder
-penumbraShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-penumbraShadow.BackgroundTransparency = 1
-penumbraShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-penumbraShadow.Size = UDim2.new(1.01, 0, 1.01, 0)
-penumbraShadow.Image = umbraShadow.Image
-penumbraShadow.ImageTransparency = 0.78
-penumbraShadow.ScaleType = Enum.ScaleType.Slice
-penumbraShadow.SliceCenter = umbraShadow.SliceCenter
-
-ambientShadow.Parent = shadowHolder
-ambientShadow.Visible = false
 
 -- Console scrolling frame
 Console.Parent = Consoleframe
@@ -132,14 +98,6 @@ local function toggle()
 	local guiGoal = visible and {Position = UDim2.new(0.25,0,0.2,0), ImageTransparency = 0}
 							  or {Position = UDim2.new(0.25,0,-1,0), ImageTransparency = 1}
 	TweenService:Create(bckpattern, tweenInfo, guiGoal):Play()
-
-	-- Shadow tweens
-	local umbraGoal = visible and {ImageTransparency = 0.75, Size = UDim2.new(1.02,0,1.02,0)}
-							  or {ImageTransparency = 0.88, Size = UDim2.new(1,0,1,0)}
-	local penumbraGoal = visible and {ImageTransparency = 0.78, Size = UDim2.new(1.01,0,1.01,0)}
-							  or {ImageTransparency = 0.88, Size = UDim2.new(1,0,1,0)}
-	TweenService:Create(umbraShadow, tweenInfo, umbraGoal):Play()
-	TweenService:Create(penumbraShadow, tweenInfo, penumbraGoal):Play()
 
 	-- Console contents fade/slide
 	local consoleGoal = visible and {BackgroundTransparency = 0, Position = UDim2.new(0,0,0,0)}
