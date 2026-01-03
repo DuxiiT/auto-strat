@@ -1350,9 +1350,9 @@ local function start_auto_chain()
                 else
                     task.wait(11)
                 end
-            else
-                task.wait(1)
             end
+
+            task.wait(1)
         end
 
         auto_chain_running = false
@@ -1397,9 +1397,9 @@ local function start_auto_dj_booth()
                 else
                     task.wait(28)
                 end
-            else
-                task.wait(1)
             end
+
+            task.wait(1)
         end
 
         auto_dj_running = false
