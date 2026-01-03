@@ -621,6 +621,7 @@ local function do_place_tower(t_name, t_pos)
         if ok and check_res_ok(res) then return true end
         task.wait(0.25)
     end
+    log("Placing tower: " .. t_name, "green")
 end
 
 local function do_upgrade_tower(t_obj, path_id)
@@ -961,7 +962,6 @@ function TDS:Place(t_name, px, py, pz, ...)
     end
 
     do_place_tower(t_name, Vector3.new(px, py, pz))
-    log("Placing tower: " .. t_name, "green")
 
     local new_t
     repeat
