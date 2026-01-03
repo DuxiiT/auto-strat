@@ -1,11 +1,9 @@
 local UIS = game:GetService("UserInputService")
 local guiParent = gethui and gethui() or game:GetService("CoreGui")
 
--- Remove existing GUI
 local old = guiParent:FindFirstChild("TDSGui")
 if old then old:Destroy() end
 
--- Create main ScreenGui
 local TDSGui = Instance.new("ScreenGui")
 TDSGui.Name = "TDSGui"
 TDSGui.Parent = guiParent
@@ -18,8 +16,9 @@ bckpattern.Name = "bckpattern"
 bckpattern.Parent = TDSGui
 bckpattern.Active = true
 bckpattern.Draggable = true
-bckpattern.Position = UDim2.new(0.25,0,0.2,0)
-bckpattern.Size = UDim2.new(0.5,0,0.6,0)
+bckpattern.AnchorPoint = Vector2.new(0.5, 0.5)
+bckpattern.Position = UDim2.new(0.5, 0, 0.5, 0)
+bckpattern.Size = UDim2.new(0.5, 0, 0.6, 0)
 bckpattern.Image = "rbxassetid://118045968280960"
 bckpattern.ImageColor3 = Color3.fromRGB(13,13,13)
 bckpattern.ScaleType = Enum.ScaleType.Crop
@@ -96,7 +95,8 @@ TextLabel.TextScaled = true
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Parent = TDSGui
 ToggleButton.Size = UDim2.new(0,110,0,32)
-ToggleButton.Position = UDim2.new(0,10,1,-42)
+ToggleButton.AnchorPoint = Vector2.new(0.5,0)
+ToggleButton.Position = UDim2.new(0.5,0,0,10)
 ToggleButton.Text = "Toggle GUI"
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 14
@@ -118,7 +118,6 @@ UIS.InputBegan:Connect(function(input, gp)
 	end
 end)
 
--- Shared reference
 shared.AutoStratGUI = {
 	Console = Console,
 	bckpattern = bckpattern
