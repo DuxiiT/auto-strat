@@ -849,8 +849,14 @@ function TDS:Addons()
 
     loadstring(code)()
 
-    while not TDS.Equip and TDS.MultiMode and TDS.Multiplayer do
+    while not (TDS.MultiMode and TDS.Multiplayer) do
         task.wait(0.1)
+    end
+
+    if game_state == "GAME" then
+        while not TDS.Equip do
+            task.wait(0.1)
+        end
     end
 
     return true
