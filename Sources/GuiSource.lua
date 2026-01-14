@@ -353,7 +353,7 @@ create_toggle_with_input("Sell Farms", "SellFarms", "SellFarmsWave", main_page)
 create_slider("Path Distance", "PathDistance", 0, 300, main_page)
 
 create_toggle("Enable Anti-Lag", "AntiLag", misc_page)
-create_toggle("Auto Collect Pickups", "AutoPickups", main_page)
+create_toggle("Auto Collect Pickups", "AutoPickups", misc_page)
 create_toggle("Claim Rewards", "ClaimRewards", misc_page)
 create_toggle("Send Discord Webhook", "SendWebhook", misc_page)
 
