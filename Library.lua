@@ -1391,29 +1391,34 @@ local function start_auto_chain()
             if #commander >= 3 then
                 if idx > #commander then idx = 1 end
 
-                remote_func:InvokeServer(
+                local response = remote_func:InvokeServer(
                     "Troops",
                     "Abilities",
                     "Activate",
                     { Troop = commander[idx], Name = "Call Of Arms", Data = {} }
                 )
 
-                idx += 1
+                if response then
+                    idx += 1
 
-                local hotbar = player_gui.ReactUniversalHotbar.Frame
-                local timescale = hotbar and hotbar:FindFirstChild("timescale")
-                if timescale then
-                    if timescale:FindFirstChild("Lock") then
-                        task.wait(11)
+                    local hotbar = player_gui:FindFirstChild("ReactUniversalHotbar")
+                    local timescale_frame = hotbar and hotbar.Frame:FindFirstChild("timescale")
+                    
+                    if timescale_frame and timescale_frame.Visible then
+                        if timescale_frame:FindFirstChild("Lock") then
+                            task.wait(10.3)
+                        else
+                            task.wait(5.25)
+                        end
                     else
-                        task.wait(5.5)
+                        task.wait(10.3)
                     end
                 else
-                    task.wait(11)
+                    task.wait(0.5)
                 end
+            else
+                task.wait(1)
             end
-
-            task.wait(1)
         end
 
         auto_chain_running = false
@@ -1446,18 +1451,6 @@ local function start_auto_dj_booth()
                     "Activate",
                     { Troop = DJ, Name = "Drop The Beat", Data = {} }
                 )
-
-                local hotbar = player_gui.ReactUniversalHotbar.Frame
-                local timescale = hotbar and hotbar:FindFirstChild("timescale")
-                if timescale then
-                    if timescale:FindFirstChild("Lock") then
-                        task.wait(28)
-                    else
-                        task.wait(14)
-                    end
-                else
-                    task.wait(28)
-                end
             end
 
             task.wait(1)
