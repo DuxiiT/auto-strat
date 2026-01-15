@@ -1,3 +1,36 @@
+-- Anti AFK
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local afkTime = 0
+local isAfk = false
+
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+    isAfk = true
+end)
+
+RunService.Heartbeat:Connect(function(deltaTime)
+    afkTime = afkTime + deltaTime
+    
+    if afkTime >= 60 then
+        afkTime = 0
+        VirtualUser:CaptureController()
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        wait(0.1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
+
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function()
+    afkTime = 0
+    isAfk = false
+end)
+
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local function identify_game_state()
@@ -1305,8 +1338,31 @@ local function start_anti_lag()
         anti_lag_running = false
     end)
 end
-
+-- Anti afk feature
 local function start_anti_afk()
+    task.spawn(function()
+        local Players = game:GetService("Players")
+        local VirtualUser = game:GetService("VirtualUser")
+        local RunService = game:GetService("RunService")
+        local player = Players.LocalPlayer
+        local afkTime = 0
+        
+        player.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+        
+        RunService.Heartbeat:Connect(function(deltaTime)
+            afkTime = afkTime + deltaTime
+            if afkTime >= 60 then
+                afkTime = 0
+                VirtualUser:CaptureController()
+                VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                task.wait(0.1)
+                VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end
+        end)
+    end)
     task.spawn(function()
         local core_gui = game:GetService("CoreGui")
         local overlay = core_gui:WaitForChild("RobloxPromptGui"):WaitForChild("promptOverlay")
