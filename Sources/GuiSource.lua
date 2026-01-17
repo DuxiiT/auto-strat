@@ -26,7 +26,8 @@ local function save_settings()
         AutoMercenary = _G.AutoMercenary,
         PathDistance = _G.PathDistance,
         SellFarms = _G.SellFarms,
-        SellFarmsWave = _G.SellFarmsWave
+        SellFarmsWave = _G.SellFarmsWave,
+        RejoinLobby = _G.RejoinLobby
     }
     writefile(CONFIG_FILE, http_service:JSONEncode(data))
 end
@@ -35,7 +36,8 @@ local function load_settings()
     local default = {
         AutoSkip = false, AutoPickups = false, AutoChain = false, AutoDJ = false,
         AntiLag = false, ClaimRewards = false, SendWebhook = false, WebhookURL = "",
-        AutoMercenary = false, PathDistance = 0, SellFarms = false, SellFarmsWave = 13
+        AutoMercenary = false, PathDistance = 0, SellFarms = false, SellFarmsWave = 13,
+        RejoinLobby = false
     }
     if isfile(CONFIG_FILE) then
         local success, decoded = pcall(function() return http_service:JSONDecode(readfile(CONFIG_FILE)) end)
@@ -369,6 +371,7 @@ create_toggle("Auto Mercenary Base", "AutoMercenary", main_page)
 create_toggle_with_input("Sell Farms", "SellFarms", "SellFarmsWave", main_page)
 create_slider("Path Distance", "PathDistance", 0, 300, main_page)
 
+create_toggle("Auto Rejoin Lobby", "RejoinLobby", misc_page)
 create_toggle("Enable Anti-Lag", "AntiLag", misc_page)
 create_toggle("Auto Collect Pickups", "AutoPickups", misc_page)
 create_toggle("Claim Rewards", "ClaimRewards", misc_page)
