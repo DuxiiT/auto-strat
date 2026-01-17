@@ -1307,14 +1307,36 @@ local function start_anti_lag()
 end
 
 local function start_anti_afk()
+    local VirtualUser = game:GetService("VirtualUser")
+
+    task.spawn(function()
+        local function disable_idled()
+            local success, connections = pcall(getconnections, local_player.Idled)
+            if success then
+                for _, v in pairs(connections) do
+                    v:Disable()
+                end
+            end
+        end
+        
+        disable_idled()
+    end)
+
+    task.spawn(function()
+        local_player.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new(0, 0))
+        end)
+    end)
+
     task.spawn(function()
         local core_gui = game:GetService("CoreGui")
         local overlay = core_gui:WaitForChild("RobloxPromptGui"):WaitForChild("promptOverlay")
 
-        overlay.ChildAdded:Connect(function(a)
-            if a.Name == 'ErrorPrompt' then
+        overlay.ChildAdded:Connect(function(child)
+            if child.Name == 'ErrorPrompt' then
                 while true do
-                    teleport_service:Teleport(game.PlaceId)
+                    teleport_service:Teleport(game.PlaceId, local_player)
                     task.wait(5)
                 end
             end
@@ -1323,31 +1345,14 @@ local function start_anti_afk()
 
     task.spawn(function()
         local lobby_timer = 0
-        local time_limit = 60 
-
-        while game_state == "LOBBY" do
+        while game_state == "LOBBY" do 
             task.wait(1)
             lobby_timer = lobby_timer + 1
-
-            if lobby_timer == 20 then
-                print("Potentially stuck, waiting 40 seconds before rejoining.")
-            end
-
-            if lobby_timer >= time_limit then
-                game:GetService("TeleportService"):Teleport(3260590327, game.Players.LocalPlayer)
+            if lobby_timer >= 60 then
+                teleport_service:Teleport(3260590327, local_player)
                 break 
             end
         end
-    end)
-end
-
-local function start_rejoin_on_disconnect()
-    task.spawn(function()
-        game.Players.PlayerRemoving:connect(function (plr)
-            if plr == game.Players.LocalPlayer then
-                game:GetService('TeleportService'):Teleport(3260590327, plr)
-            end
-        end)
     end)
 end
 
@@ -1564,6 +1569,5 @@ end
 
 start_back_to_lobby()
 start_anti_afk()
-start_rejoin_on_disconnect()
 
 return TDS
