@@ -1557,6 +1557,7 @@ local function handle_post_match()
     local ui_root
     repeat
         task.wait(1)
+        if not _G.AutoRejoin then return end
 
         local root = player_gui:FindFirstChild("ReactGameNewRewards")
         local frame = root and root:FindFirstChild("Frame")
@@ -2454,7 +2455,7 @@ local function start_back_to_lobby()
     back_to_lobby_running = true
 
     task.spawn(function()
-        while true do
+        while _G.AutoRejoin do
             pcall(function()
                 handle_post_match()
             end)
