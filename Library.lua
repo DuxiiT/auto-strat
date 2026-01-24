@@ -146,6 +146,7 @@ local default_settings = {
     WebhookURL = "",
     Cooldown = 0.01,
     Multiply = 60,
+    PickupMethod = "Pathfinding",
     StreamerMode = false,
     HideUsername = false,
     StreamerName = "",
@@ -1616,6 +1617,20 @@ local Misc = Window:Tab({Title = "Misc", Icon = "box"}) do
         Value = _G.AutoPickups,
         Callback = function(v)
             set_setting("AutoPickups", v)
+        end
+    })
+
+    Misc:Dropdown({
+        Title = "Pickup Method",
+        Desc = "",
+        List = {"Pathfinding", "Instant"},
+        Value = _G.PickupMethod or "Pathfinding",
+        Callback = function(choice)
+            local selected = type(choice) == "table" and choice[1] or choice
+            if not selected or selected == "" then
+                selected = "Pathfinding"
+            end
+            set_setting("PickupMethod", selected)
         end
     })
 
@@ -3175,10 +3190,16 @@ local function start_auto_pickups()
 
                     if item:IsA("MeshPart") and (item.Name == "SnowCharm" or item.Name == "Lorebook") then
                         if not is_void_charm(item) then
-                            local target_pos = item.Position + Vector3.new(0, 3, 0)
-                            move_to_pos(target_pos)
-                            task.wait(0.2)
-                            task.wait(0.3)
+                            if _G.PickupMethod == "Instant" then
+                                hrp.CFrame = item.CFrame * CFrame.new(0, 3, 0)
+                                task.wait(0.2)
+                                task.wait(0.3)
+                            else
+                                local target_pos = item.Position + Vector3.new(0, 3, 0)
+                                move_to_pos(target_pos)
+                                task.wait(0.2)
+                                task.wait(0.3)
+                            end
                         end
                     end
                 end
