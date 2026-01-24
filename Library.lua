@@ -240,6 +240,28 @@ local function apply_3d_rendering()
     else
         run_service:Set3dRenderingEnabled(true)
     end
+    local core_gui = game:GetService("CoreGui")
+    local gui = core_gui:FindFirstChild("ADS_BlackScreen")
+    if _G.Disable3DRendering then
+        if not gui then
+            gui = Instance.new("ScreenGui")
+            gui.Name = "ADS_BlackScreen"
+            gui.IgnoreGuiInset = true
+            gui.ResetOnSpawn = false
+            gui.Parent = core_gui
+            local frame = Instance.new("Frame")
+            frame.Name = "Cover"
+            frame.BackgroundColor3 = Color3.new(0, 0, 0)
+            frame.BorderSizePixel = 0
+            frame.Size = UDim2.fromScale(1, 1)
+            frame.Parent = gui
+        end
+        gui.Enabled = true
+    else
+        if gui then
+            gui.Enabled = false
+        end
+    end
 end
 
 load_settings()
