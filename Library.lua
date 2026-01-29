@@ -99,6 +99,7 @@ local auto_claim_rewards = false
 local anti_lag_running = false
 local auto_chain_running = false
 local auto_dj_running = false
+local auto_necro_running = false
 local auto_mercenary_base_running = false
 local auto_military_base_running = false
 local sell_farms_running = false
@@ -130,6 +131,7 @@ local default_settings = {
     AutoChain = false,
     SupportCaravan = false,
     AutoDJ = false,
+    AutoNecro = false,
     AutoRejoin = true,
     SellFarms = false,
     AutoMercenary = false,
@@ -931,6 +933,15 @@ local Autostrat = Window:Tab({Title = "Autostrat", Icon = "star"}) do
         Value = _G.AutoDJ,
         Callback = function(v)
             set_setting("AutoDJ", v)
+        end
+    })
+
+    Autostrat:Toggle({
+        Title = "Auto Necro",
+        Desc = "Uses Necromancer Ability",
+        Value = _G.AutoNecro,
+        Callback = function(v)
+            set_setting("AutoNecro", v)
         end
     })
 
@@ -3470,6 +3481,51 @@ local function start_auto_dj_booth()
     end)
 end
 
+local function start_auto_necro()
+    if auto_necro or not _G.AutoNecro then return end
+    auto_necro_running = true
+
+    task.spawn(function()
+        local idx = 1
+
+        while _G.AutoNecro do
+            local necromancer = {}
+            local towers_folder = workspace:FindFirstChild("Towers")
+
+            if towers_folder then
+                for _, towers in ipairs(towers_folder:GetDescendants()) do
+                    if towers:IsA("Folder") and towers.Name == "TowerReplicator"
+                    and towers:GetAttribute("Name") == "Necromancer"
+                    and towers:GetAttribute("OwnerId") == game.Players.LocalPlayer.UserId
+                    and (towers:GetAttribute("Upgrade") or 0) >= 0 then
+                        necromancer[#necromancer + 1] = towers.Parent
+                    end
+                end
+            end
+            if #necromancer >= 1 and necromancer ~= nil then
+                if idx > #necromancer then idx = 1 end
+                local current_necromancer = necromancer[idx]
+                local replicator = current_necromancer:FindFirstChild("TowerReplicator")
+                local upgrade_level = replicator and replicator:GetAttribute("Upgrade") or 0
+                local response = remote_func:InvokeServer(
+                    "Troops",
+                    "Abilities",
+                    "Activate",
+                    { Troop = current_necromancer, Name = "Raise The Dead", Data = {} }
+                )
+                if response then 
+                    idx += 1 
+                else
+                    task.wait(1)
+                end
+            end
+            task.wait(0.1)
+        end
+
+        auto_necro_running = false
+    end)
+end
+
 local function start_auto_mercenary()
     if not _G.AutoMercenary and not _G.AutoMilitary then return end
         
@@ -3616,6 +3672,10 @@ task.spawn(function()
 
         if _G.AutoDJ and not auto_dj_running then
             start_auto_dj_booth()
+        end
+
+        if _G.AutoNecro and not auto_necro_running then
+            start_auto_necro()
         end
 
         if _G.AutoMercenary and not auto_mercenary_base_running then
