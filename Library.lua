@@ -3481,14 +3481,47 @@ local function start_auto_dj_booth()
     end)
 end
 
+local function get_ability_cooldown(towerName, abilityName)
+    local content = game.ReplicatedStorage:FindFirstChild("Content")
+    if not content then return nil end
+    
+    local tower = content:FindFirstChild("Tower")
+    if not tower then return nil end
+    
+    local towerFolder = tower:FindFirstChild(towerName)
+    if not towerFolder then return nil end
+    
+    local statsModule = towerFolder:FindFirstChild("Stats")
+    if not statsModule then return nil end
+    
+    local success, stats = pcall(function()
+        return require(statsModule)
+    end)
+    
+    if not success or not stats then return nil end
+    
+    local defaults = stats.Defaults
+    if not defaults or not defaults.Abilities then return nil end
+    
+    for _, ability in ipairs(defaults.Abilities) do
+        if ability.Name == abilityName then
+            return ability.Debounce
+        end
+    end
+    
+    return nil
+end
+
 local function start_auto_necro()
     if auto_necro or not _G.AutoNecro then return end
     auto_necro_running = true
 
     task.spawn(function()
         local idx = 1
+        local cooldown = get_ability_cooldown("Necromancer", "Raise The Dead")
 
         while _G.AutoNecro do
+            local waitTime = 0.1
             local necromancer = {}
             local towers_folder = workspace:FindFirstChild("Towers")
 
@@ -3515,11 +3548,12 @@ local function start_auto_necro()
                 )
                 if response then 
                     idx += 1 
+                    waitTime = cooldown
                 else
-                    task.wait(1)
+                    waitTime = 1
                 end
             end
-            task.wait(0.1)
+            task.wait(waitTime)
         end
 
         auto_necro_running = false
