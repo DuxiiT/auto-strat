@@ -136,6 +136,10 @@ local default_settings = {
     SellFarms = false,
     AutoMercenary = false,
     AutoMilitary = false,
+    GatlingEnabled = false,
+    GatlingMultiply = 10,
+    GatlingCooldown = 0.05,
+    GatlingCriticalRange = 100,
     Frost = false,
     Fallen = false,
     Easy = false,
@@ -721,6 +725,7 @@ end
 
 local MercenarySlider
 local MilitarySlider
+local MaxLenght
 
 local function calc_length()
     local map = workspace:FindFirstChild("Map")
@@ -737,6 +742,10 @@ local function calc_length()
             
             if MilitarySlider then
                 MilitarySlider:SetMax(max_path_distance)
+            end
+
+            if MaxLenght then
+                MaxLenght = max_path_distance
             end
             return true
         end
@@ -820,7 +829,8 @@ local function record_action(command_str)
 end
 
 function TDS:Addons()
-    local url = "https://api.jnkie.com/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
+    local url = "https://api.jnkie.com/api/v1/luascripts/public/11c70444ab71c667ca62e0a984f61232a45f81c144a4afeb9480ad26c8087386/download"
+
     local success, code = pcall(game.HttpGet, game, url)
 
     if not success then
@@ -881,7 +891,7 @@ local Window = Library:Window({
     Desc = "your #1 hub",
     Theme = "Dark",
     DiscordLink = "https://discord.gg/autostrat",
-    Icon = 100189470230468,
+    Icon = 126403638319957,
     Config = {
         Keybind = Enum.KeyCode.LeftControl,
         Size = UDim2.new(0, 500, 0, 400)
@@ -1185,6 +1195,31 @@ local Main = Window:Tab({Title = "Main", Icon = "stamp"}) do
         end
     })
 
+    Main:Section({Title = "Premium"})
+    local UnlockBtn = Main:Button({
+        Title = "Unlock Premium Features",
+        Desc = "Required Key System to access Gatling and Equipper",
+        Callback = function()
+            task.spawn(function()
+                Window:Notify({Title = "ADS", Desc = "Loading Key System...", Time = 3})
+                
+                local success = TDS:Addons()
+                
+                if success then
+                    TDS.GatlingConfig.Enabled = true
+                    TDS:AutoGatling()
+                    
+                    Window:Notify({
+                        Title = "ADS",
+                        Desc = "Premium Unlocked! Gatling Gun is now ACTIVE.",
+                        Time = 5,
+                        Type = "normal"
+                    })
+                end
+            end)
+        end
+    })
+
     Main:Section({Title = "Equipper"})
     Main:Textbox({
         Title = "Equip:",
@@ -1223,28 +1258,59 @@ local Main = Window:Tab({Title = "Main", Icon = "stamp"}) do
         end
     })
 
-    Main:Button({
-        Title = "Unlock Equipper",
-        Desc = "",
-        Callback = function()
-            task.spawn(function()
+    Main:Section({Title = "Gatling Gun"})
+    Main:Toggle({
+        Title = "Auto Gatling Enabled",
+        Value = _G.GatlingEnabled,
+        Callback = function(state)
+            if not TDS.Equip then
                 Window:Notify({
                     Title = "ADS",
-                    Desc = "Loading Key System...",
+                    Desc = "Waiting for Key System to finish...",
                     Time = 3,
                     Type = "normal"
                 })
-                local success = TDS:Addons()
-                
-                if success then
-                    Window:Notify({
-                        Title = "ADS",
-                        Desc = "Addons Loaded! You can now equip towers.",
-                        Time = 3,
-                        Type = "normal"
-                    })
-                end
-            end)
+                repeat 
+                    task.wait(0.5) 
+                until TDS.Equip
+            end
+
+            set_setting("GatlingEnabled", state)
+            TDS.GatlingConfig.Enabled = state
+        end
+    })
+
+    Main:Slider({
+        Title = "Gatling Multiply",
+        Min = 1,
+        Max = 50,
+        Value = _G.GatlingMultiply,
+        Callback = function(val)
+            set_setting("GatlingMultiply", val)
+            TDS.GatlingConfig.Multiply = val
+        end
+    })
+
+    Main:Slider({
+        Title = "Gatling Cooldown",
+        Min = 0.01,
+        Max = 1,
+        Value = _G.GatlingCooldown,
+        Callback = function(val)
+            set_setting("GatlingCooldown", val)
+            TDS.GatlingConfig.Cooldown = val
+        end
+    })
+
+    Main:Slider({
+        Title = "Critical Range",
+        Desc = "Target enemies this close to the exit first",
+        Min = 10,
+        Max = 200,
+        Value = _G.GatlingCriticalRange,
+        Callback = function(val)
+            set_setting("GatlingCriticalRange", val)
+            TDS.GatlingConfig.CriticalRange = val
         end
     })
 
