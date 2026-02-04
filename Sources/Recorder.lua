@@ -603,11 +603,15 @@ return function(ctx)
                 local original
                 original = hookmetamethod(game, "__namecall", function(self, ...)
                     local method = getnamecallmethod and getnamecallmethod() or nil
+                    local args = {...}
+                    local result = original(self, ...)
                     local handler = Globals.__tds_recorder_handler
                     if handler and method then
-                        pcall(handler, self, method, {...})
+                        task.spawn(function()
+                            pcall(handler, self, method, args)
+                        end)
                     end
-                    return original(self, ...)
+                    return result
                 end)
             end
         end
