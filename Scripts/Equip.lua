@@ -131,7 +131,14 @@ textbox.FocusLost:Connect(function(enterPressed)
     if not enterPressed or not TDS.Equip then return end
     local tower = resolveTower(textbox.Text)
     if tower then
-        pcall(TDS.Equip, TDS, tower)
+        local ok = pcall(TDS.Equip, TDS, tower)
+        if ok then
+            local globals = getgenv and getgenv() or nil
+            local record = globals and globals.__tds_record_equip
+            if type(record) == "function" then
+                record(tower)
+            end
+        end
     end
     textbox.Text = ""
 end)

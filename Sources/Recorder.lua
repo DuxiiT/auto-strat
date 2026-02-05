@@ -400,6 +400,22 @@ return function(ctx)
         end
     end
 
+    Globals.__tds_record_equip = function(tower_name)
+        if type(tower_name) ~= "string" then
+            return
+        end
+        local cmd = string.format("TDS:Equip(%s)", string.format("%q", tower_name))
+        record_line(cmd, "Equipped: " .. tower_name)
+    end
+
+    Globals.__tds_record_unequip = function(tower_name)
+        if type(tower_name) ~= "string" then
+            return
+        end
+        local cmd = string.format("TDS:Unequip(%s)", string.format("%q", tower_name))
+        record_line(cmd, "Unequipped: " .. tower_name)
+    end
+
     local function handle_namecall(remote, method, args)
         if not Globals.record_strat then
             return
