@@ -59,9 +59,9 @@ local function IdentifyGameState()
     local TempGui = TempPlayer:WaitForChild("PlayerGui")
     
     while true do
-        if TempGui:FindFirstChild("LobbyGui") then
+        if TempGui:FindFirstChild("ReactLobbyHud") then
             return "LOBBY"
-        elseif TempGui:FindFirstChild("GameGui") then
+        elseif TempGui:FindFirstChild("ReactUniversalHotbar") then
             return "GAME"
         end
         task.wait(1)
