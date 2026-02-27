@@ -2506,7 +2506,12 @@ local function IsMapAvailable(name)
     end
 
     repeat
-        RemoteEvent:FireServer("LobbyVoting", "Veto")
+        local VetoText = PlayerGui:WaitForChild("ReactGameIntermission"):WaitForChild("Frame"):WaitForChild("buttons"):WaitForChild("veto"):WaitForChild("value").Text
+        
+        if VetoText ~= "Veto (0/0)" then 
+            RemoteEvent:FireServer("LobbyVoting", "Veto") 
+        end
+        
         wait(1)
 
         local found = false
@@ -2521,7 +2526,6 @@ local function IsMapAvailable(name)
         end
 
         local TotalPlayer = #PlayersService:GetChildren()
-        local VetoText = PlayerGui:WaitForChild("ReactGameIntermission"):WaitForChild("Frame"):WaitForChild("buttons"):WaitForChild("veto"):WaitForChild("value").Text
 
     until found or VetoText == "Veto ("..TotalPlayer.."/"..TotalPlayer..")"
 
