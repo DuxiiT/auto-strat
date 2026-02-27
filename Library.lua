@@ -3502,7 +3502,7 @@ local function StartAutoDjBooth()
 end
 
 local function StartAutoNecro()
-    if AutoNecro or not Globals.AutoNecro then return end
+    if AutoNecroRunning or not Globals.AutoNecro then return end
     AutoNecroRunning = true
 
     local lastActivation = 0
