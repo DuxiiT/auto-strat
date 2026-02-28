@@ -2505,10 +2505,11 @@ local function IsMapAvailable(name)
         end
     end
 
-    repeat
-        local VetoText = PlayerGui:WaitForChild("ReactGameIntermission"):WaitForChild("Frame"):WaitForChild("buttons"):WaitForChild("veto"):WaitForChild("value").Text
+repeat
+        local IntermissionFrame = PlayerGui:WaitForChild("ReactGameIntermission"):WaitForChild("Frame")
+        local VetoText = IntermissionFrame:WaitForChild("buttons"):WaitForChild("veto"):WaitForChild("value").Text
         
-        if VetoText ~= "Veto (0/0)" then 
+        if IntermissionFrame.Visible and VetoText:match("Veto %(0/") then 
             RemoteEvent:FireServer("LobbyVoting", "Veto") 
         end
         
