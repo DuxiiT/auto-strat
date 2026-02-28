@@ -617,14 +617,14 @@ return function(ctx)
                 original = hookmetamethod(game, "__namecall", function(self, ...)
                     local method = getnamecallmethod and getnamecallmethod() or nil
                     local args = {...}
-                    local result = original(self, ...)
+                    local results = table.pack(original(self, ...))
                     local handler = Globals.__tds_recorder_handler
                     if handler and method then
                         task.spawn(function()
                             pcall(handler, self, method, args)
                         end)
                     end
-                    return result
+                    return table.unpack(results, 1, results.n)
                 end)
             end
         end
