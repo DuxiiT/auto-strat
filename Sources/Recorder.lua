@@ -5,14 +5,14 @@ return function(ctx)
         return
     end
 
-    local Window = ctx.Window
-    local replicated_storage = ctx.replicated_storage or game:GetService("ReplicatedStorage")
-    local http_service = ctx.http_service or game:GetService("HttpService")
-    local game_state = ctx.game_state or "UNKNOWN"
+	local Window = ctx.Window
+    local replicated_storage = ctx.ReplicatedStorage or game:GetService("ReplicatedStorage")
+    local http_service = ctx.HttpService or game:GetService("HttpService")
+    local game_state = ctx.GameState or "UNKNOWN"
     local workspace_ref = ctx.workspace or workspace
 
     local players_service = game:GetService("Players")
-    local local_player = ctx.local_player or players_service.LocalPlayer or players_service.PlayerAdded:Wait()
+    local local_player = ctx.LocalPlayer or players_service.LocalPlayer or players_service.PlayerAdded:Wait()
 
     Globals.record_strat = Globals.record_strat or false
 
