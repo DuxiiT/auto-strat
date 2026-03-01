@@ -2591,7 +2591,9 @@ local function UnlockSpeedTickets()
     end
 
     if LocalPlayer.TimescaleTickets.Value >= 1 then
-        if game.Players.LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale.Lock.Visible then
+        local TimescaleButton = LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale
+        local LockIcon = TimescaleButton:FindFirstChild("Lock")
+        if LockIcon and LockIcon.Visible then
             ReplicatedStorage.RemoteFunction:InvokeServer('TicketsManager', 'UnlockTimeScale')
             Logger:Log("Unlocked timescale tickets")
         end
