@@ -226,9 +226,9 @@ TDS = {
     ActiveStrat = true,
     MatchmakingMap = {
         ["Hardcore"] = "hardcore",
-        ["Pizza Party"] = "halloween",
+        ["PizzaParty"] = "halloween",
         ["Badlands"] = "badlands",
-        ["Polluted"] = "polluted"
+        ["PollutedWasteland"] = "polluted"
     }
 }
 TDS["placed_towers"] = TDS.PlacedTowers
