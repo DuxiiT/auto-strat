@@ -53,6 +53,12 @@ task.spawn(function()
     end)
 end)
 
+task.spawn(function()
+    pcall(function()
+        RemoteFunc:InvokeServer("Settings", "Update", "Show Nametags", false)
+    end)
+end)
+
 local function IdentifyGameState()
     local players = game:GetService("Players")
     local TempPlayer = players.LocalPlayer or players.PlayerAdded:Wait()
@@ -109,6 +115,7 @@ local AutoMilitaryBaseRunning = false
 local SellFarmsRunning = false
 local AutoGatlingRunning = false
 local GatlingExecuted = false
+local AutoPremiumRunning = false
 
 local MaxPathDistance = 300 -- default
 local MilMarker = nil
@@ -133,6 +140,7 @@ local DefaultSettings = {
     AutoSkip = false,
     AutoChain = false,
     AutoGatling = false,
+    AutoPremium = false,
     SupportCaravan = false,
     AutoDJ = false,
     AutoNecro = false,
@@ -142,10 +150,6 @@ local DefaultSettings = {
     SellFarms = false,
     AutoMercenary = false,
     AutoMilitary = false,
-    GatlingEnabled = false,
-    GatlingMultiply = 10,
-    GatlingCooldown = 0.05,
-    GatlingCriticalRange = 100,
     Frost = false,
     Fallen = false,
     Easy = false,
@@ -157,11 +161,9 @@ local DefaultSettings = {
     NoRecoil = false,
     SellFarmsWave = 1,
     WebhookURL = "",
-    Cooldown = 0.01,
-    Multiply = 60,
     PickupMethod = "Pathfinding",
     StreamerMode = false,
-    HideUsername = false,
+    HideUsername = true,
     StreamerName = "",
     tagName = "None",
     Modifiers = {}
@@ -320,6 +322,9 @@ end
 LoadSettings()
 Globals.TimeScaleValue = CoerceTimeScaleValue(Globals.TimeScaleValue, 2)
 Apply3dRendering()
+
+Globals.HideUsername = true
+SetSetting("HideUsername", true)
 
 local isTagChangerRunning = false
 local tagChangerConn = nil
@@ -883,12 +888,17 @@ local function MissionsUIFix()
     end)
 end
 
-function TDS:Addons()
-    local url = "https://api.jnkie.com/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
+local PremiumLoaded = false
 
+function TDS:Addons()
+    if PremiumLoaded then return true end
+    PremiumLoaded = true
+
+    local url = "https://api.jnkie.com/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     local success, code = pcall(game.HttpGet, game, url)
 
     if not success then
+        PremiumLoaded = false
         return false
     end
 
@@ -1289,9 +1299,19 @@ local Main = Window:Tab({Title = "Main", Icon = "stamp"}) do
     })
 
     Main:Section({Title = "Premium"})
+
+    Main:Toggle({
+        Title = "Auto Load Premium (In-Game)",
+        Desc = "Automatically loads the key system when you join a match.",
+        Value = Globals.AutoPremium,
+        Callback = function(v)
+            SetSetting("AutoPremium", v)
+        end
+    })
+    
     local UnlockBtn = Main:Button({
         Title = "Unlock Premium Features",
-        Desc = "Required Key System to access Gatling and Equipper",
+        Desc = "Required Key System to access Equipper",
         Callback = function()
             task.spawn(function()
                 Window:Notify({Title = "ADS", Desc = "Loading Key System...", Time = 3})
@@ -1299,12 +1319,9 @@ local Main = Window:Tab({Title = "Main", Icon = "stamp"}) do
                 local success = TDS:Addons()
 
                 if success then
-                    TDS.GatlingConfig.Enabled = true
-                    TDS:AutoGatling()
-
                     Window:Notify({
                         Title = "ADS",
-                        Desc = "Premium Unlocked! Gatling Gun is now ACTIVE.",
+                        Desc = "Premium Unlocked! Equipper is now ACTIVE.",
                         Time = 5,
                         Type = "normal"
                     })
@@ -1348,62 +1365,6 @@ local Main = Window:Tab({Title = "Main", Icon = "stamp"}) do
                     })
                 end
             end)
-        end
-    })
-
-    Main:Section({Title = "Gatling Gun"})
-    Main:Toggle({
-        Title = "Auto Gatling Enabled",
-        Value = Globals.GatlingEnabled,
-        Callback = function(state)
-            if not TDS.Equip then
-                Window:Notify({
-                    Title = "ADS",
-                    Desc = "Waiting for Key System to finish...",
-                    Time = 3,
-                    Type = "normal"
-                })
-                repeat 
-                    task.wait(0.5) 
-                until TDS.Equip
-            end
-
-            SetSetting("GatlingEnabled", state)
-            TDS.GatlingConfig.Enabled = state
-        end
-    })
-
-    Main:Slider({
-        Title = "Gatling Multiply",
-        Min = 1,
-        Max = 50,
-        Value = Globals.GatlingMultiply,
-        Callback = function(val)
-            SetSetting("GatlingMultiply", val)
-            TDS.GatlingConfig.Multiply = val
-        end
-    })
-
-    Main:Slider({
-        Title = "Gatling Cooldown",
-        Min = 0.01,
-        Max = 1,
-        Value = Globals.GatlingCooldown,
-        Callback = function(val)
-            SetSetting("GatlingCooldown", val)
-            TDS.GatlingConfig.Cooldown = val
-        end
-    })
-
-    Main:Slider({
-        Title = "Critical Range",
-        Desc = "Target enemies this close to the exit first",
-        Min = 10,
-        Max = 200,
-        Value = Globals.GatlingCriticalRange,
-        Callback = function(val)
-            SetSetting("GatlingCriticalRange", val)
-            TDS.GatlingConfig.CriticalRange = val
         end
     })
 
@@ -1845,68 +1806,6 @@ local Misc = Window:Tab({Title = "Misc", Icon = "box"}) do
         Value = Globals.ClaimRewards,
         Callback = function(v)
             SetSetting("ClaimRewards", v)
-        end
-    })
-
-    Misc:Section({Title = "Gatling Gun"})
-    Misc:Textbox({
-        Title = "Cooldown:",
-        Desc = "",
-        Placeholder = "0.01",
-        Value = Globals.Cooldown,
-        ClearTextOnFocus = true,
-        Callback = function(value)
-            if value ~= 0 then
-                SetSetting("Cooldown", value)
-            end
-        end
-    })
-
-    Misc:Textbox({
-        Title = "Multiply:",
-        Desc = "",
-        Placeholder = "60",
-        Value = Globals.Multiply,
-        ClearTextOnFocus = true,
-        Callback = function(value)
-            if value ~= 0 then
-                SetSetting("Multiply", value)
-            end
-        end
-    })
-
-    Misc:Button({
-        Title = "Apply Gatling",
-        Callback = function()
-            if hookmetamethod then
-                Window:Notify({
-                    Title = "ADS",
-                    Desc = "Successfully applied Gatling Gun Settings",
-                    Time = 3,
-                    Type = "normal"
-                })
-
-                local ggchannel = require(game.ReplicatedStorage.Resources.Universal.NewNetwork).Channel("GatlingGun")
-                local gganim = require(game.ReplicatedStorage.Content.Tower["Gatling Gun"].Animator)
-
-                gganim._fireGun = function(self)
-                    local cam = require(game.ReplicatedStorage.Content.Tower["Gatling Gun"].Animator.CameraController)
-                    local pos = cam.result and cam.result.Position or cam.position
-
-                    for i = 1, Globals.Multiply do
-                        ggchannel:fireServer("Fire", pos, workspace:GetAttribute("Sync"), workspace:GetServerTimeNow())
-                    end
-
-                    self:Wait(Globals.Cooldown)
-                end
-            else
-                Window:Notify({
-                    Title = "ADS",
-                    Desc = "Your executor is not supported, please use a different one!",
-                    Time = 3,
-                    Type = "normal"
-                })
-            end
         end
     })
 
@@ -3299,6 +3198,33 @@ local function StartAutoGatling()
     end)
 end
 
+local function StartAutoPremium()
+    if AutoPremiumRunning or not Globals.AutoPremium then return end
+    AutoPremiumRunning = true
+
+    task.spawn(function()
+        if GameState == "GAME" and not PremiumLoaded then
+            Window:Notify({
+                Title = "ADS",
+                Desc = "Loading Key System...",
+                Time = 3,
+                Type = "normal"
+            })
+            
+            local success = TDS:Addons()
+            
+            if success then
+                Window:Notify({
+                    Title = "ADS",
+                    Desc = "Premium Unlocked!",
+                    Time = 3,
+                    Type = "normal"
+                })
+            end
+        end
+    end)
+end
+
 local function StartAutoPickups()
     if AutoPickupsRunning or not Globals.AutoPickups then return end
     AutoPickupsRunning = true
@@ -3932,6 +3858,10 @@ task.spawn(function()
 
         if Globals.AutoGatling and not AutoGatlingRunning then
             StartAutoGatling()
+        end
+
+        if Globals.AutoPremium and not AutoPremiumRunning then
+            StartAutoPremium()
         end
 
         task.wait(1)
