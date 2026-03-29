@@ -2990,16 +2990,30 @@ end
 function TDS:VoteSkip(StartWave, EndWave)
     task.spawn(function()
         local CurrentWave = GetCurrentWave()
-        StartWave = StartWave or (CurrentWave > 0 and CurrentWave or 1)
-        EndWave = EndWave or StartWave
+        
+        self.LastVoteSkipTarget = self.LastVoteSkipTarget or 0
+        
+        if not StartWave then
+            if self.LastVoteSkipTarget < CurrentWave then
+                self.LastVoteSkipTarget = CurrentWave
+            else
+                self.LastVoteSkipTarget = self.LastVoteSkipTarget + 1
+            end
+            StartWave = self.LastVoteSkipTarget
+            EndWave = StartWave
+        else
+            EndWave = EndWave or StartWave
+            self.LastVoteSkipTarget = EndWave
+        end
 
         for wave = StartWave, EndWave do
             while GetCurrentWave() < wave do
                 task.wait(1)
             end
 
-            local SkipDone = false
-            while not SkipDone do
+            local TargetNextWave = wave + 1
+            
+            while GetCurrentWave() < TargetNextWave do
                 local VoteUi = PlayerGui:FindFirstChild("ReactOverridesVote")
                 local VoteButton = VoteUi 
                     and VoteUi:FindFirstChild("Frame") 
@@ -3007,16 +3021,15 @@ function TDS:VoteSkip(StartWave, EndWave)
                     and VoteUi.Frame.votes:FindFirstChild("vote", true)
 
                 if VoteButton and VoteButton.Position == UDim2.new(0.5, 0, 0.5, 0) then
-                    RunVoteSkip()
-                    SkipDone = true
-                    Logger:Log("Voted to skip wave " .. wave)
-                else
-                    if GetCurrentWave() > wave then
-                        break 
-                    end
-                    task.wait(0.5)
+                    pcall(function()
+                        RemoteFunc:InvokeServer("Voting", "Skip")
+                    end)
                 end
+                
+                task.wait(0.5)
             end
+            
+            Logger:Log("Successfully skipped wave " .. wave)
         end
     end)
 end
