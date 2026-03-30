@@ -5191,7 +5191,7 @@ function Library:Window(p)
 		CloseUIImage.BorderSizePixel = 0
 		CloseUIImage.Position = UDim2.new(0.5, 0,0.5, 0)
 		CloseUIImage.Size = UDim2.new(0, 50,0, 50)
-		CloseUIImage.Image = "rbxassetid://105059922903197"
+		CloseUIImage.Image = "rbxassetid://100189470230468"
 		CloseUIImage.ImageTransparency = 0
 
 		addToTheme('Text & Icon', CloseUIImage)
