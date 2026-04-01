@@ -952,10 +952,10 @@ CurrentEquippedTowers = GetEquippedTowers()
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
 local Window = Library:Window({
-    Title = "Aether Hub",
-    Desc = "your #1 hub",
+    Title = "Furry Hub OwO",
+    Desc = "your #1 furry hub :3",
     Theme = "Dark",
-    DiscordLink = "https://discord.gg/autostrat",
+    DiscordLink = "https://discord.gg/aetherhub",
     Icon = 100189470230468,
     Config = {
         Keybind = Enum.KeyCode.LeftControl,
