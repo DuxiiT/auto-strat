@@ -1779,7 +1779,7 @@ local Misc = Window:Tab({Title = "Misc", Icon = "box"}) do
 
     Misc:Toggle({
         Title = "Auto Collect Pickups",
-        Desc = "Collects Logbooks + Snowballs",
+        Desc = "Collects Logbooks + Bunz",
         Value = Globals.AutoPickups,
         Callback = function(v)
             SetSetting("AutoPickups", v)
