@@ -230,7 +230,9 @@ TDS = {
         ["Hardcore"] = "hardcore",
         ["PizzaParty"] = "halloween",
         ["Badlands"] = "badlands",
-        ["PollutedWasteland"] = "polluted"
+        ["PollutedWasteland"] = "polluted",
+        ["DuckyEasy"] = "ducky2025",
+        ["DuckyHard"] = "ducky2025"
     }
 }
 TDS["placed_towers"] = TDS.PlacedTowers
@@ -1779,7 +1781,7 @@ local Misc = Window:Tab({Title = "Misc", Icon = "box"}) do
 
     Misc:Toggle({
         Title = "Auto Collect Pickups",
-        Desc = "Collects Logbooks + Bunz",
+        Desc = "Collects Logbooks + Event currency",
         Value = Globals.AutoPickups,
         Callback = function(v)
             SetSetting("AutoPickups", v)
@@ -2203,6 +2205,7 @@ local function RejoinMatch()
         if CurrentMode then
             local ok, result = pcall(function()
                 local payload
+                local EventMode = StateFolder:FindFirstChild("Mode") and StateFolder.Mode.Value
 
                 if CurrentMode == "PizzaParty" then
                     payload = {
@@ -2222,6 +2225,12 @@ local function RejoinMatch()
                 elseif CurrentMode == "Badlands" then
                     payload = {
                         mode = "badlands",
+                        count = 1
+                    }
+                elseif EventMode == "DuckEvent" then
+                    payload = {
+                        difficulty = CurrentMode,
+                        mode = "ducky2025",
                         count = 1
                     }
                 else
@@ -2800,6 +2809,9 @@ function TDS:Mode(difficulty)
                         mode = mode,
                         count = 1
                     }
+                    if difficulty:match("Ducky") then
+                        payload.difficulty = difficulty:gsub("Ducky", "")
+                    end
                 else
                     payload = {
                         difficulty = difficulty,
@@ -3306,7 +3318,7 @@ local function StartAutoPickups()
                 for _, item in ipairs(folder:GetChildren()) do
                     if not Globals.AutoPickups then break end
 
-                    if item:IsA("MeshPart") and (item.Name == "Bunz" or item.Name == "Lorebook") then
+                    if item:IsA("MeshPart") and (item.Name == "Bunz" or item.Name == "Lorebook" or item.Name == "SnowCharm") then
                         if not IsVoidCharm(item) then
                             if Globals.PickupMethod == "Instant" then
                                 hrp.CFrame = item.CFrame * CFrame.new(0, 3, 0)
