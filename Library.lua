@@ -3251,6 +3251,38 @@ local function StartAutoPremium()
     end)
 end
 
+local AntiStuck = nil
+
+local function StartAntiStuck()
+    local function StuckState()
+        local isLoading = LocalPlayer:GetAttribute("Loading") == true
+        local isTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+
+        if isLoading or isTeleporting then
+            if not AntiStuck then
+                AntiStuck = task.spawn(function()
+                    task.wait(60)
+                    pcall(function()
+                        TeleportService:Teleport(3260590327)
+                    end)
+                end)
+            end
+        else
+            if AntiStuck then
+                task.cancel(AntiStuck)
+                AntiStuck = nil
+            end
+        end
+    end
+
+    LocalPlayer:GetAttributeChangedSignal("Loading"):Connect(StuckState)
+    LocalPlayer:GetAttributeChangedSignal("Teleporting"):Connect(StuckState)
+
+    StuckState()
+end
+
+StartAntiStuck()
+
 local function StartAutoPickups()
     if AutoPickupsRunning or not Globals.AutoPickups then return end
     AutoPickupsRunning = true
