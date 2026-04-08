@@ -1600,6 +1600,13 @@ end
 Window:Line()
 
 local Strategies = Window:Tab({Title = "Strategies", Icon = "newspaper"}) do
+    Strategies:Section({Title = "Notice"})
+    Strategies:Label({
+        Title = "Strategies are available on our discord server at discord.gg/aetherhub", 
+        Desc = ""
+    })
+
+--[[
     Strategies:Section({Title = "Survival Strategies"})
     Strategies:Toggle({
         Title = "Frost Mode",
@@ -1757,6 +1764,7 @@ local Strategies = Window:Tab({Title = "Strategies", Icon = "newspaper"}) do
             end
         end
     })
+]]
 end
 
 Window:Line()
@@ -2236,6 +2244,9 @@ local function RejoinMatch()
                         mode = "ducky2025",
                         count = 1
                     }
+                elseif CurrentMode == "Trial" then
+                    TeleportService:Teleport(3260590327)
+                    return true
                 else
                     payload = {
                         difficulty = CurrentMode,
