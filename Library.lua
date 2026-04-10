@@ -1390,17 +1390,34 @@ local Main = Window:Tab({Title = "Main", Icon = "stamp"}) do
                     until TDS.Equip
                 end
 
-                local success, err = pcall(function()
+                local oldLoadout = table.concat(GetEquippedTowers(), ",")
+
+                local success = pcall(function()
                     TDS:Equip(tostring(text))
                 end)
 
                 if success then
-                    Window:Notify({
-                        Title = "ADS",
-                        Desc = "Successfully equipped: " .. tostring(text),
-                        Time = 3,
-                        Type = "normal"
-                    })
+                    local TowerName = nil
+                    
+                    for _, tower in ipairs(GetEquippedTowers()) do
+                        if tower ~= "None" and not string.find(oldLoadout, tower) then
+                            TowerName = tower
+                            break
+                        end
+                    end
+
+                    if TowerName then
+                        if Globals.__tds_record_equip then
+                            Globals.__tds_record_equip(TowerName)
+                        end
+
+                        Window:Notify({
+                            Title = "ADS",
+                            Desc = "Successfully equipped: " .. TowerName,
+                            Time = 3,
+                            Type = "normal"
+                        })
+                    end
                 end
             end)
         end
