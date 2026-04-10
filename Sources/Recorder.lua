@@ -533,7 +533,7 @@ return function(ctx)
             if current_wave == 0 then
                 record_line("TDS:Ready()", "Readied up for the match")
             else
-                record_line("TDS:VoteSkip()", "Voted to skip wave")
+                record_line("TDS:VoteSkip(" .. current_wave .. ")", "Voted to skip wave " .. current_wave)
             end
             handled = true
             return
