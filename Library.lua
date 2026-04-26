@@ -73,20 +73,6 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    local CoreGui = game:GetService("CoreGui")
-    local overlay = CoreGui:WaitForChild("RobloxPromptGui"):WaitForChild("promptOverlay")
-
-    overlay.ChildAdded:Connect(function(child)
-        if child.Name == 'ErrorPrompt' then
-            while true do
-                TeleportService:Teleport(3260590327)
-                task.wait(5)
-            end
-        end
-    end)
-end)
-
-task.spawn(function()
     pcall(function()
         RemoteFunc:InvokeServer("Settings", "Update", "Show Nametags", false)
     end)
@@ -199,7 +185,7 @@ local DefaultSettings = {
     HideUsername = true,
     StreamerName = "",
     tagName = "None",
-    Modifiers = {}
+    Modifiers = {},
 }
 
 local TimeScaleValues = {0.5, 1, 1.5, 2}
@@ -1633,7 +1619,6 @@ end
 Window:Line()
 
 local Configuration = Window:Tab({Title = "Configuration", Icon = "sliders-horizontal"}) do
-    
     Configuration:Section({Title = "Performance Optimization"})
     
     Configuration:Toggle({
@@ -2934,9 +2919,22 @@ end
 
 -- // public api
 -- lobby
-function TDS:Mode(difficulty)
+function TDS:Mode(difficulty, code)
     if GameState ~= "LOBBY" then 
         return false 
+    end
+
+    if code ~= nil and not MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) then
+        local ServerType = game:GetService('RobloxReplicatedStorage').GetServerType:InvokeServer()
+        
+        if ServerType ~= "VIPServer" then
+            local args = {
+                placeId = game.PlaceId, 
+                linkCode = tostring(code)
+            }
+            game:GetService("ExperienceService"):LaunchExperience(args)
+            return true
+        end
     end
 
     if difficulty == "Trial" then
