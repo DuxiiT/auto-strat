@@ -3134,7 +3134,7 @@ function TDS:GameInfo(name, list)
 
     CastModifierVote(modifiers)
 
-    if MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) then
+    if MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) or game:GetService("ReplicatedStorage").StateReplicators.GameStateReplicator:GetAttribute("IsPrivateServer") == true then
         SelectMapOverride(name, "vip")
         Logger:Log("Selected map: " .. name)
         repeat task.wait(1) until PlayerGui:FindFirstChild("ReactUniversalHotbar")
