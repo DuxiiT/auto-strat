@@ -16,7 +16,7 @@ local function StartAntiStuck()
                 AntiStuck = task.spawn(function()
                     task.wait(60)
                     pcall(function()
-                        TeleportService:Teleport(3260590327)
+                        SmartTeleportToLobby()
                     end)
                 end)
             end
@@ -911,28 +911,42 @@ local function MissionsUIFix()
     end)
 end
 
-function TDS:Addons()
-    if GameState == "LOBBY" then 
-        return false 
-    end
-    if PremiumLoaded then return true end
+local IsCurrentlyLoading = false
 
-    PremiumLoaded = true
+function TDS:Addons()
+    if GameState == "LOBBY" then return false end
+    if PremiumLoaded then return true end
+    
+    if IsCurrentlyLoading then 
+        while IsCurrentlyLoading do task.wait(0.1) end
+        return PremiumLoaded 
+    end
+
+    local originalPlace = self.Place
+    IsCurrentlyLoading = true
 
     local url = "https://api.jnkie.com/api/v1/luascripts/public/57fe397f76043ce06afad24f07528c9f93e97730930242f57134d0b60a2d250b/download"
     local success, code = pcall(game.HttpGet, game, url)
 
-    if not success then
-        PremiumLoaded = false
+    if not success or not code then
+        IsCurrentlyLoading = false
         return false
     end
 
-    loadstring(code)()
+    local func = loadstring(code)
+    if not func then
+        IsCurrentlyLoading = false
+        return false
+    end
 
-    while not (TDS.MultiMode and TDS.Multiplayer and TDS.Place) do
+    pcall(func)
+
+    while self.Place == originalPlace do
         task.wait(0.1)
     end
 
+    PremiumLoaded = true
+    IsCurrentlyLoading = false
     return true
 end
 
@@ -2353,11 +2367,34 @@ local function GetAllRewards()
     return results
 end
 
+local function SmartTeleportToLobby()
+    local lobbyId = 3260590327
+    if TDS.PrivateCode and TDS.PrivateCode ~= "" then
+        pcall(function()
+            game:GetService("ExperienceService"):LaunchExperience({
+                placeId = lobbyId, 
+                linkCode = TDS.PrivateCode
+            })
+        end)
+    else
+        pcall(function()
+            TeleportService:Teleport(lobbyId)
+        end)
+    end
+end
+
 -- // rejoining
 local function RejoinMatch()
     local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
     local success = false
     local res
+
+    if TDS.PrivateCode and TDS.PrivateCode ~= "" then
+        Logger:Log("Private server code detected. Returning to private lobby...")
+        SmartTeleportToLobby()
+        task.wait(9e9)
+        return
+    end
 
     repeat
         local StateFolder = ReplicatedStorage:FindFirstChild("State")
@@ -2395,7 +2432,7 @@ local function RejoinMatch()
                         count = 1
                     }
                 elseif CurrentMode == "Trial" then
-                    TeleportService:Teleport(3260590327)
+                    SmartTeleportToLobby()
                     return true
                 else
                     payload = {
@@ -2920,6 +2957,10 @@ end
 -- // public api
 -- lobby
 function TDS:Mode(difficulty, code)
+    if code then
+        self.PrivateCode = tostring(code)
+    end
+
     if GameState ~= "LOBBY" then 
         return false 
     end
@@ -2974,13 +3015,12 @@ function TDS:Mode(difficulty, code)
     local MatchMaking = frame and frame:WaitForChild("matchmaking", 30)
 
     if MatchMaking then
-    local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
-    local success = false
-    local res
+        local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
+        local success = false
+        local res
         repeat
             local ok, result = pcall(function()
                 local mode = TDS.MatchmakingMap[difficulty]
-
                 local payload
 
                 if mode then
@@ -3145,7 +3185,7 @@ function TDS:GameInfo(name, list)
         return true
     else
         Logger:Log("Map '" .. name .. "' not available, rejoining...")
-        TeleportService:Teleport(3260590327, LocalPlayer)
+        SmartTeleportToLobby()
         repeat task.wait(9999) until false
     end
 end
@@ -3187,19 +3227,21 @@ end
 
 function TDS:Place(TName, px, py, pz, ...)
     local args = {...}
+    local isStacking = args[#args] == "stack" or args[#args] == true
 
-    if args[#args] == "stack" or args[#args] == true then
-        if not StackerErrorShown then
-            StackerErrorShown = true
-            Window:Notify({
-                Title = "ADS",
-                Desc = "You need to run TDS:Addons() first to use the stacker feature!",
-                Time = 3,
-                Type = "error"
-            })
-            
-            return false
+    if isStacking and not PremiumLoaded and GameState == "GAME" then
+        Window:Notify({
+            Title = "ADS",
+            Desc = "Stacking requires Premium. Automatically loading key system...",
+            Time = 3,
+            Type = "normal"
+        })
+
+        local success = self:Addons()
+        if success then 
+            return self:Place(TName, px, py, pz, unpack(args))
         end
+        return false
     end
 
     if GameState ~= "GAME" then
@@ -3399,19 +3441,18 @@ local function StartAutoGatling()
 end
 
 local function StartAutoPremium()
-    if AutoPremiumRunning or not Globals.AutoPremium then return end
-
+    if AutoPremiumRunning or not Globals.AutoPremium or PremiumLoaded then return end
     AutoPremiumRunning = true
 
     task.spawn(function()
-        if GameState == "GAME" and not PremiumLoaded then
+        if GameState == "GAME" then
             Window:Notify({
                 Title = "ADS",
                 Desc = "Loading Key System...",
                 Time = 3,
                 Type = "normal"
             })
-            
+
             local success = TDS:Addons()
             
             if success then
@@ -3421,7 +3462,12 @@ local function StartAutoPremium()
                     Time = 3,
                     Type = "normal"
                 })
+            else
+                task.wait(5)
+                AutoPremiumRunning = false 
             end
+        else
+            AutoPremiumRunning = false
         end
     end)
 end
