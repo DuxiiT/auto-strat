@@ -102,11 +102,6 @@ return function(ctx)
         return tostring(n)
     end
 
-    local function round(n) 
-        if type(n) ~= "number" then return n end
-        return math.round(n * 1000000) / 1000000
-    end
-
     local serialize_value
     local serialize_value_raw
     local serialize_table
@@ -151,15 +146,15 @@ return function(ctx)
         elseif t == "Vector3" then
             return string.format(
                 "Vector3.new(%s, %s, %s)",
-                num_to_str(round(v.X)),
-                num_to_str(round(v.Y)),
-                num_to_str(round(v.Z))
+                num_to_str(v.X),
+                num_to_str(v.Y),
+                num_to_str(v.Z)
             )
         elseif t == "CFrame" then
             local comps = {v:GetComponents()}
             local parts = {}
             for i = 1, #comps do
-                parts[i] = num_to_str(round(comps[i]))
+                parts[i] = num_to_str(comps[i])
             end
             return "CFrame.new(" .. table.concat(parts, ", ") .. ")"
         elseif t == "Instance" then
@@ -191,15 +186,15 @@ return function(ctx)
         elseif t == "Vector3" then
             return string.format(
                 "Vector3.new(%s, %s, %s)",
-                num_to_str(round(v.X)),
-                num_to_str(round(v.Y)),
-                num_to_str(round(v.Z))
+                num_to_str(v.X),
+                num_to_str(v.Y),
+                num_to_str(v.Z)
             )
         elseif t == "CFrame" then
             local comps = {v:GetComponents()}
             local parts = {}
             for i = 1, #comps do
-                parts[i] = num_to_str(round(comps[i]))
+                parts[i] = num_to_str(comps[i])
             end
             return "CFrame.new(" .. table.concat(parts, ", ") .. ")"
         elseif t == "Instance" then
@@ -832,8 +827,6 @@ TDS:Mode("%s")%s
                     local p = tower:GetPivot().Position
                     pos_x, pos_y, pos_z = p.X, p.Y, p.Z
                 end
-
-                pos_x, pos_y, pos_z = round(pos_x), round(pos_y), round(pos_z)
                 
                 local command
                 if Globals.StackEnabled then
