@@ -2849,14 +2849,15 @@ local function GetCurrentWave()
     return tonumber(WaveNum) or 0
 end
 
-local function DoPlaceTower(TName, TPos)
+local function DoPlaceTower(TName, TPos, ...)
+    local args = {...}
     Logger:Log("Placing tower: " .. TName)
     while true do
         local ok, res = pcall(function()
             return RemoteFunc:InvokeServer("Troops", "Pl\208\176ce", {
                 Rotation = CFrame.new(),
                 Position = TPos
-            }, TName)
+            }, TName, unpack(args))
         end)
 
         if ok and CheckResOk(res) then return true end
@@ -3280,7 +3281,7 @@ function TDS:Place(TName, px, py, pz, ...)
         end
     end
 
-    DoPlaceTower(TName, Vector3.new(px, py, pz))
+    DoPlaceTower(TName, Vector3.new(px, py, pz), unpack(args))
 
     local NewT
     repeat
