@@ -2641,7 +2641,6 @@ local function SelectMapOverride(MapId, ...)
     CastMapVote(MapId, Vector3.new(12.59, 10.64, 52.01))
     task.wait(1)
     LobbyReadyUp()
-    MatchReadyUp()
 end
 
 local function CastModifierVote(ModsTable)
