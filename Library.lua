@@ -169,6 +169,7 @@ local DefaultSettings = {
     AutoDJ = false,
     AutoNecro = false,
     AutoRejoin = true,
+    PrivateCode = "",
     TimeScaleEnabled = false,
     TimeScaleValue = 2,
     SellFarms = false,
@@ -262,6 +263,7 @@ TDS = {
 TDS["placed_towers"] = TDS.PlacedTowers
 TDS["active_strat"] = TDS.ActiveStrat
 TDS["matchmaking_map"] = TDS.MatchmakingMap
+TDS.PrivateCode = Globals.PrivateCode or ""
 
 local UpgradeHistory = {}
 
@@ -279,26 +281,23 @@ local function SaveSettings()
 end
 
 local function LoadSettings()
+    local data = {}
     if isfile(FileName) then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(FileName))
+        pcall(function()
+            data = HttpService:JSONDecode(readfile(FileName))
         end)
+    end
 
-        if success and type(data) == "table" then
-            for key, DefaultVal in pairs(DefaultSettings) do
-                if data[key] ~= nil then
-                    Globals[key] = data[key]
-                else
-                    Globals[key] = DefaultVal
-                end
+    for key, DefaultVal in pairs(DefaultSettings) do
+        if Globals[key] == nil then
+            if data[key] ~= nil then
+                Globals[key] = data[key]
+            else
+                Globals[key] = DefaultVal
             end
-            return
         end
     end
-
-    for key, value in pairs(DefaultSettings) do
-        Globals[key] = value
-    end
+    
     SaveSettings()
 end
 
@@ -1087,6 +1086,19 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
         Value = Globals.AutoRejoin,
         Callback = function(v)
             SetSetting("AutoRejoin", v)
+        end
+    })
+
+    Automation:Textbox({
+        Title = "Private Server Code",
+        Desc = "Paste your Private Server Code here to always join your private server",
+        Placeholder = "Example: 16055572089259659857100802598629",
+        Value = Globals.PrivateCode or "",
+        ClearTextOnFocus = false,
+        Callback = function(text)
+            Globals.PrivateCode = text
+            TDS.PrivateCode = text
+            SetSetting("PrivateCode", text)
         end
     })
 
