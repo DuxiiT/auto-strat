@@ -1061,6 +1061,48 @@ local function StartAutoReady()
     end)
 end
 
+local EasyModeRunning = false
+
+local function StartEasyMode()
+    if EasyModeRunning or not Globals.Easy then return end
+
+    EasyModeRunning = true
+
+    task.spawn(function()
+        local content = nil
+
+        while Globals.Easy and content == nil do
+            local success, res = pcall(function() 
+                return game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Strategies/Easy.lua") 
+            end)
+
+            if success and type(res) == "string" then
+                content = res
+            else
+                task.wait(1)
+            end
+        end
+
+        if content then
+            while not (TDS and TDS.Loadout) do 
+                task.wait(0.5) 
+            end
+
+            local func = loadstring(content)
+
+            if func then
+                pcall(func)
+
+                Window:Notify({Title = "ADS", Desc = "Running...", Time = 3})
+            end
+        end
+
+        repeat task.wait(2) until not Globals.Easy or (GameState == "GAME" and not game:IsLoaded())
+
+        EasyModeRunning = false
+    end)
+end
+
 -- // ui
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
@@ -1096,9 +1138,17 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
         Value = Globals.PrivateCode or "",
         ClearTextOnFocus = false,
         Callback = function(text)
-            Globals.PrivateCode = text
-            TDS.PrivateCode = text
-            SetSetting("PrivateCode", text)
+            local validated = text
+
+            if text ~= "" and not text:match("^%d+$") then
+                validated = ""
+            end
+
+            Globals.PrivateCode = validated
+            
+            TDS.PrivateCode = validated
+            
+            SetSetting("PrivateCode", validated)
         end
     })
 
@@ -2003,40 +2053,23 @@ end
 Window:Line()
 
 local Strategies = Window:Tab({Title = "Strategies", Icon = "clipboard-list"}) do
-    Strategies:Section({Title = "Information"})
-    Strategies:Label({
-        Title = "Strategies are available on our discord server at discord.gg/aetherhub", 
-        Desc = ""
-    })
 
---[[
     Strategies:Section({Title = "Survival Strategies"})
     Strategies:Toggle({
-        Title = "Frost Mode",
-        Desc = "Skill tree: MAX\n\nTowers:\nGolden Scout,\nFirework Technician,\nHacker,\nBrawler,\nDJ Booth,\nCommander,\nEngineer,\nAccelerator,\nTurret,\nMercenary Base",
-        Value = Globals.Frost,
+        Title = "Easy Mode (Summer Castle)",
+        Desc = "Requires: Normal Scout\nMap: Summer Castle",
+        Value = Globals.Easy,
         Callback = function(v)
-            SetSetting("Frost", v)
+            Globals.Easy = v
+            SetSetting("Easy", v)
 
             if v then
-                 task.spawn(function()
-                    local url = "https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Strategies/Frost.lua"
-                    local content = game:HttpGet(url)
-
-                    while not (TDS and TDS.Loadout) do
-                        task.wait(0.5) 
-                    end
-
-                    local func, err = loadstring(content)
-                    if func then
-                        func() 
-                        Window:Notify({ Title = "ADS", Desc = "Running...", Time = 3 })
-                    end
-                end)
+                StartEasyMode()
             end
         end
     })
 
+--[[
     Strategies:Toggle({
         Title = "Fallen Mode",
         Desc = "Skill tree: Not needed\n\nTowers:\nGolden Scout,\nBrawler,\nMercenary Base,\nElectroshocker,\nEngineer",
@@ -3096,23 +3129,30 @@ end
 -- // public api
 -- lobby
 function TDS:Mode(difficulty, code)
-    if code then
-        self.PrivateCode = tostring(code)
+    local targetCode = ""
+
+    if code and code ~= "" then
+        targetCode = code
+    elseif Globals.PrivateCode and Globals.PrivateCode ~= "" then
+        targetCode = Globals.PrivateCode
+    end
+
+    if targetCode ~= "" then
+        self.PrivateCode = tostring(targetCode)
     end
 
     if GameState ~= "LOBBY" then 
         return false 
     end
 
-    if code ~= nil and not MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) then
+    if targetCode and targetCode ~= "" and not MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) then
         local ServerType = game:GetService('RobloxReplicatedStorage').GetServerType:InvokeServer()
         
         if ServerType ~= "VIPServer" then
-            local args = {
+            game:GetService("ExperienceService"):LaunchExperience({
                 placeId = game.PlaceId, 
-                linkCode = tostring(code)
-            }
-            game:GetService("ExperienceService"):LaunchExperience(args)
+                linkCode = tostring(targetCode)
+            })
             return true
         end
     end
@@ -4253,6 +4293,10 @@ task.spawn(function()
             StartAutoReady()
         end
 
+        if Globals.Easy and not EasyModeRunning then
+            StartEasyMode()
+        end
+
         task.wait(1)
     end
 end)
@@ -4264,9 +4308,19 @@ end
 MissionsUIFix()
 
 game:GetService("GuiService").ErrorMessageChanged:Connect(function()
-    pcall(function()
-        game:GetService("TeleportService"):TeleportReconnect()
-    end)
+    local initialError = game:GetService("GuiService"):GetErrorMessage()
+
+    if initialError and initialError ~= "" then
+        task.wait(5)
+
+        local currentError = game:GetService("GuiService"):GetErrorMessage()
+
+        if currentError ~= "" and currentError == initialError then
+            pcall(function()
+                game:GetService("TeleportService"):TeleportReconnect()
+            end)
+        end
+    end
 end)
 
 return TDS
