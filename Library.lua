@@ -4138,4 +4138,10 @@ end
 
 MissionsUIFix()
 
+game:GetService("GuiService").ErrorMessageChanged:Connect(function()
+    pcall(function()
+        game:GetService("TeleportService"):TeleportReconnect()
+    end)
+end)
+
 return TDS
