@@ -159,6 +159,9 @@ local DefaultSettings = {
     MilitaryPath = false,
     MercenaryPath = false,
     AutoSkip = false,
+    AutoOpenCrates = false,
+    SelectedCrate = "All",
+    AutoReady = false,
     AutoChain = false,
     AutoGatling = false,
     AutoPremium = false,
@@ -980,6 +983,85 @@ end
 
 CurrentEquippedTowers = GetEquippedTowers()
 
+local CrateList = {
+    "All", "Basic", "Premium", "Deluxe", "Golden", "Bunny", "Halloween 2019", 
+    "Party", "Toy", "Valentines", "Xmas 2019", "Spooky", "Pumpkin", "Frost", 
+    "Lovely", "Cold Front", "Ducky", "Vigilante", "Pirate", "Phantom", 
+    "Halloween", "Jolly", "Lunar", "Lovestruck", "UglyCrate", "Coin Crate", 
+    "Banned", "Christmas 2025", "Showtime", "Valentines 2026", "Shamrock",
+    "Low Grade", "Mid Grade", "High Grade"
+}
+
+local AutoOpenRunning = false
+
+local function StartAutoOpenCrates()
+    if AutoOpenRunning or not Globals.AutoOpenCrates then return end
+    AutoOpenRunning = true
+
+    for _, crateName in ipairs(CrateList) do
+        if crateName == "All" then continue end
+
+        task.spawn(function()
+            while Globals.AutoOpenCrates do
+                if Globals.SelectedCrate == "All" or Globals.SelectedCrate == crateName then
+                    local success, res = pcall(function()
+                        return RemoteFunc:InvokeServer("Inventory", "Open", "Crate", crateName)
+                    end)
+
+                    if success and type(res) == "table" then
+                        task.wait(0.1) 
+                    else
+                        task.wait(5)
+                    end
+                else
+                    task.wait(1)
+                end
+            end
+        end)
+    end
+
+    task.spawn(function()
+        repeat task.wait(1) until not Globals.AutoOpenCrates
+        AutoOpenRunning = false
+    end)
+end
+
+-- // voting & map selection
+local function RunVoteSkip()
+    while true do
+        local success = pcall(function()
+            RemoteFunc:InvokeServer("Voting", "Skip")
+        end)
+        if success then break end
+        task.wait(0.2)
+    end
+end
+
+local AutoReadyRunning = false
+local function StartAutoReady()
+    if AutoReadyRunning or not Globals.AutoReady then return end
+    AutoReadyRunning = true
+    task.spawn(function()
+        while Globals.AutoReady do
+            if GameState == "GAME" then
+                pcall(function()
+                    local VoteUi = PlayerGui:FindFirstChild("ReactOverridesVote")
+                    local Container = VoteUi and VoteUi:FindFirstChild("Frame") 
+                        and VoteUi.Frame:FindFirstChild("votes") 
+                        and VoteUi.Frame.votes:FindFirstChild("container")
+                    local ReadyBtn = Container and Container:FindFirstChild("ready")
+                    
+                    if ReadyBtn and ReadyBtn.Visible == true then
+                        RunVoteSkip()
+                    end
+                end)
+            end
+            task.wait(1)
+        end
+        AutoReadyRunning = false
+    end)
+end
+
 -- // ui
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
@@ -1001,12 +1083,23 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
     
     Automation:Toggle({
         Title = "Auto Rejoin",
-        Desc = "Rejoins the gamemode after you've won and does the strategy again.",
+        Desc = "Rejoins the gamemode after you've won and does the strategy again",
         Value = Globals.AutoRejoin,
         Callback = function(v)
             SetSetting("AutoRejoin", v)
         end
     })
+
+    Automation:Toggle({
+    Title = "Auto Ready Up",
+    Desc = "Automatically readies up when starting a match",
+    Value = Globals.AutoReady,
+    Callback = function(v)
+        Globals.AutoReady = v
+        SetSetting("AutoReady", v)
+        if v then StartAutoReady() end
+    end
+    }) 
 
     Automation:Toggle({
         Title = "Auto Skip Waves",
@@ -1124,6 +1217,29 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
             task.wait(3)
         end
     end)
+
+    Automation:Section({Title = "Inventory Management"})
+
+    Automation:Toggle({
+    Title = "Auto Open Crates",
+    Desc = "Periodically attempts to open selected crates.",
+    Value = Globals.AutoOpenCrates or false,
+    Callback = function(v)
+        Globals.AutoOpenCrates = v
+        SetSetting("AutoOpenCrates", v)
+        if v then StartAutoOpenCrates() end
+    end
+    })
+
+    Automation:Dropdown({
+    Title = "Target Crate:",
+    List = CrateList,
+    Value = Globals.SelectedCrate or "All",
+    Callback = function(choice)
+        Globals.SelectedCrate = choice
+        SetSetting("SelectedCrate", choice)
+    end
+    })
 
     Automation:Section({Title = "Economy & Farming"})
     
@@ -2568,17 +2684,6 @@ local function HandlePostMatch()
     RejoinMatch()
 
     task.wait(9e9)
-end
-
--- // voting & map selection
-local function RunVoteSkip()
-    while true do
-        local success = pcall(function()
-            RemoteFunc:InvokeServer("Voting", "Skip")
-        end)
-        if success then break end
-        task.wait(0.2)
-    end
 end
 
 local function MatchReadyUp()
@@ -4126,6 +4231,14 @@ task.spawn(function()
 
         if Globals.AutoPremium and not AutoPremiumRunning then
             StartAutoPremium()
+        end
+
+        if Globals.AutoOpenCrates and not AutoOpenRunning then
+            StartAutoOpenCrates()
+        end
+
+        if Globals.AutoReady and not AutoReadyRunning then
+            StartAutoReady()
         end
 
         task.wait(1)
