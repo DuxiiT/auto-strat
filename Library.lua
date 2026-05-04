@@ -1977,13 +1977,6 @@ local Configuration = Window:Tab({Title = "Configuration", Icon = "sliders-horiz
                     Time = 3,
                     Type = "normal"
                 })
-            else
-                Window:Notify({
-                    Title = "ADS",
-                    Desc = "Invalid Webhook URL!",
-                    Time = 3,
-                    Type = "normal"
-                })
             end
         end
     })
@@ -2393,13 +2386,6 @@ local Settings = Window:Tab({Title = "Settings", Icon = "settings"}) do
                 Window:Notify({
                     Title = "ADS",
                     Desc = "Webhook is successfully set!",
-                    Time = 3,
-                    Type = "normal"
-                })
-            else
-                Window:Notify({
-                    Title = "ADS",
-                    Desc = "Invalid Webhook URL!",
                     Time = 3,
                     Type = "normal"
                 })
@@ -3155,14 +3141,12 @@ function TDS:Mode(difficulty, code)
     if not IsMobile then
         if code and code ~= "" then
             targetCode = code
-        elseif Globals.PrivateCode and Globals.PrivateCode ~= "" then
+        elseif Globals.PrivateCode then
             targetCode = Globals.PrivateCode
         end
     end
 
-    if targetCode ~= "" then
-        self.PrivateCode = tostring(targetCode)
-    end
+    self.PrivateCode = tostring(targetCode)
 
     if GameState ~= "LOBBY" then 
         return false 

@@ -4239,7 +4239,7 @@ function Library:Window(p)
 			TextLabel_1.TextTransparency = 0.30000001192092896
 			TextLabel_1.TextWrapped = true
 			TextLabel_1.TextXAlignment = Enum.TextXAlignment.Left
-			TextLabel_1.ClearTextOnFocus = not ClearText
+			TextLabel_1.ClearTextOnFocus = ClearText
 
 			addToTheme('Text & Value', TextLabel_1)
 
@@ -4253,10 +4253,8 @@ function Library:Window(p)
 			Frame_2.Size = UDim2.new(1.05, 0,0, 2)
 
 			local function o()
-				if #TextLabel_1.Text > 0 then
-					pcall(Callback, TextLabel_1.Text)
-				end
-			end
+                pcall(Callback, TextLabel_1.Text)
+            end
 
 			TextLabel_1.FocusLost:Connect(o)
 
