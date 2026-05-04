@@ -2,7 +2,12 @@ local Globals = getgenv()
 
 local PlayersService = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = PlayersService.LocalPlayer or PlayersService.PlayerAdded:Wait()
+local GuiService = game:GetService("GuiService")
+local SmartTeleportToLobby
+local platform = UserInputService:GetPlatform()
+local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
 
 local AntiStuck = nil
 
@@ -35,6 +40,23 @@ local function StartAntiStuck()
 end
 
 StartAntiStuck()
+
+local GuiService = game:GetService("GuiService")
+
+local function Reconnect()
+    local initial = GuiService:GetErrorMessage()
+    if initial and initial ~= "" then
+        task.wait(5)
+        if GuiService:GetErrorMessage() == initial then
+            pcall(function()
+                TeleportService:TeleportReconnect()
+            end)
+        end
+    end
+end
+
+task.spawn(Reconnect)
+GuiService.ErrorMessageChanged:Connect(Reconnect)
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
@@ -102,7 +124,7 @@ local function StartAntiAfk()
             task.wait(1)
             LobbyTimer = LobbyTimer + 1
             if LobbyTimer >= 600 then
-                TeleportService:Teleport(3260590327)
+                SmartTeleportToLobby()
                 break 
             end
         end
@@ -263,7 +285,6 @@ TDS = {
 TDS["placed_towers"] = TDS.PlacedTowers
 TDS["active_strat"] = TDS.ActiveStrat
 TDS["matchmaking_map"] = TDS.MatchmakingMap
-TDS.PrivateCode = Globals.PrivateCode or ""
 
 local UpgradeHistory = {}
 
@@ -1131,26 +1152,26 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
         end
     })
 
-    Automation:Textbox({
-        Title = "Private Server Code",
-        Desc = "Paste your Private Server Code here to always join your private server",
-        Placeholder = "Example: 16055572089259659857100802598629",
-        Value = Globals.PrivateCode or "",
-        ClearTextOnFocus = false,
-        Callback = function(text)
-            local validated = text
+    if not IsMobile then
+        Automation:Textbox({
+            Title = "Private Server Code",
+            Desc = "Paste your Private Server Code here to always join your private server",
+            Placeholder = "Example: 16055572089259659857100802598629",
+            Value = Globals.PrivateCode or "",
+            ClearTextOnFocus = false,
+            Callback = function(text)
+                local validated = text
 
-            if text ~= "" and not text:match("^%d+$") then
-                validated = ""
+                if text ~= "" and not text:match("^%d+$") then
+                    validated = ""
+                end
+
+                Globals.PrivateCode = validated
+                
+                SetSetting("PrivateCode", validated)
             end
-
-            Globals.PrivateCode = validated
-            
-            TDS.PrivateCode = validated
-            
-            SetSetting("PrivateCode", validated)
-        end
-    })
+        })
+    end
 
     Automation:Toggle({
     Title = "Auto Ready Up",
@@ -2528,14 +2549,14 @@ local function GetAllRewards()
     return results
 end
 
-local function SmartTeleportToLobby()
+function SmartTeleportToLobby()
     local lobbyId = 3260590327
     
     pcall(function()
-        if TDS.PrivateCode and TDS.PrivateCode ~= "" then
+        if not IsMobile and Globals.PrivateCode and Globals.PrivateCode ~= "" then
             game:GetService("ExperienceService"):LaunchExperience({
                 placeId = lobbyId, 
-                linkCode = TDS.PrivateCode
+                linkCode = Globals.PrivateCode
             })
         else
             TeleportService:Teleport(lobbyId)
@@ -2572,7 +2593,7 @@ local function RejoinMatch()
     local success = false
     local res
 
-    if TDS.PrivateCode and TDS.PrivateCode ~= "" then
+    if Globals.PrivateCode and Globals.PrivateCode ~= "" and not IsMobile then
         Logger:Log("Private server code detected. Returning to private lobby...")
         SmartTeleportToLobby()
         task.wait(9e9)
@@ -3131,10 +3152,12 @@ end
 function TDS:Mode(difficulty, code)
     local targetCode = ""
 
-    if code and code ~= "" then
-        targetCode = code
-    elseif Globals.PrivateCode and Globals.PrivateCode ~= "" then
-        targetCode = Globals.PrivateCode
+    if not IsMobile then
+        if code and code ~= "" then
+            targetCode = code
+        elseif Globals.PrivateCode and Globals.PrivateCode ~= "" then
+            targetCode = Globals.PrivateCode
+        end
     end
 
     if targetCode ~= "" then
@@ -3145,7 +3168,7 @@ function TDS:Mode(difficulty, code)
         return false 
     end
 
-    if targetCode and targetCode ~= "" and not MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) then
+    if targetCode ~= "" and not MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 10518590) then
         local ServerType = game:GetService('RobloxReplicatedStorage').GetServerType:InvokeServer()
         
         if ServerType ~= "VIPServer" then
@@ -4306,21 +4329,5 @@ if Globals.ClaimRewards and not AutoClaimRewards then
 end
 
 MissionsUIFix()
-
-game:GetService("GuiService").ErrorMessageChanged:Connect(function()
-    local initialError = game:GetService("GuiService"):GetErrorMessage()
-
-    if initialError and initialError ~= "" then
-        task.wait(5)
-
-        local currentError = game:GetService("GuiService"):GetErrorMessage()
-
-        if currentError ~= "" and currentError == initialError then
-            pcall(function()
-                game:GetService("TeleportService"):TeleportReconnect()
-            end)
-        end
-    end
-end)
 
 return TDS
