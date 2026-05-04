@@ -1608,6 +1608,7 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
     
     local CoinsLabel = Interactive:Label({Title = "Coins: 0", Desc = ""})
     local GemsLabel = Interactive:Label({Title = "Gems: 0", Desc = ""})
+    local TicketsLabel = Interactive:Label({Title = "Timescale Tickets: 0", Desc = ""})
     local LevelLabel = Interactive:Label({Title = "Level: 0", Desc = ""})
     local WinsLabel = Interactive:Label({Title = "Wins: 0", Desc = ""})
     local LosesLabel = Interactive:Label({Title = "Loses: 0", Desc = ""})
@@ -1733,6 +1734,7 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
     local function UpdateStats()
         local coins = GetStatNumber("Coins") or 0
         local gems = GetStatNumber("Gems") or 0
+        local tickets = GetStatNumber("TimescaleTickets") or 0
         local lvl = GetStatNumber("Level") or 0
         local wins = GetStatNumber("Triumphs") or 0
         local loses = GetStatNumber("Loses") or 0
@@ -1754,6 +1756,7 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
         end
         if CoinsLabel then CoinsLabel:SetTitle("Coins: " .. tostring(coins)) end
         if GemsLabel then GemsLabel:SetTitle("Gems: " .. tostring(gems)) end
+        if TicketsLabel then TicketsLabel:SetTitle("Timescale Tickets: " .. tostring(tickets)) end
         if LevelLabel then LevelLabel:SetTitle("Level: " .. tostring(lvl)) end
         if WinsLabel then WinsLabel:SetTitle("Wins: " .. tostring(wins)) end
         if LosesLabel then LosesLabel:SetTitle("Loses: " .. tostring(loses)) end
@@ -1789,7 +1792,7 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
         obj:GetAttributeChangedSignal("Next"):Connect(QueueStatsUpdate)
     end
 
-    local StatNames = {"Coins", "Gems", "Level", "Triumphs", "Loses", "Experience"}
+    local StatNames = {"Coins", "Gems", "TimescaleTickets", "Level", "Triumphs", "Loses", "Experience"}
     local ExpAttrNames = {
         "ExperienceMax",
         "ExperienceNeeded",
@@ -1968,9 +1971,9 @@ local Configuration = Window:Tab({Title = "Configuration", Icon = "sliders-horiz
         Value = Globals.WebhookURL,
         ClearTextOnFocus = true,
         Callback = function(value)
-            if value ~= "" and value:find("https://discord.com/api/webhooks/") then
-                SetSetting("WebhookURL", value)
+            SetSetting("WebhookURL", value) 
 
+            if value ~= "" and value:find("https://discord.com/api/webhooks/") then
                 Window:Notify({
                     Title = "ADS",
                     Desc = "Webhook is successfully set!",
@@ -2380,9 +2383,9 @@ local Settings = Window:Tab({Title = "Settings", Icon = "settings"}) do
         Value = Globals.WebhookURL,
         ClearTextOnFocus = true,
         Callback = function(value)
-            if value ~= "" and value:find("https://discord.com/api/webhooks/") then
-                SetSetting("WebhookURL", value)
+            SetSetting("WebhookURL", value) 
 
+            if value ~= "" and value:find("https://discord.com/api/webhooks/") then
                 Window:Notify({
                     Title = "ADS",
                     Desc = "Webhook is successfully set!",
