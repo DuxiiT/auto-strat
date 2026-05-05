@@ -9,34 +9,30 @@ local SmartTeleportToLobby
 local platform = UserInputService:GetPlatform()
 local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
 
-local AntiStuck = nil
-
 local function StartAntiStuck()
-    local function StuckState()
-        local isLoading = LocalPlayer:GetAttribute("Loading") == true
-        local isTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+    task.spawn(function()
+        local secondsStuck = 0
+        
+        while true do 
+            task.wait(1)
+            
+            local isLoading = LocalPlayer:GetAttribute("Loading") == true
+            local isTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
 
-        if isLoading or isTeleporting then
-            if not AntiStuck then
-                AntiStuck = task.spawn(function()
-                    task.wait(60)
+            if isLoading or isTeleporting then
+                secondsStuck = secondsStuck + 1
+                
+                if secondsStuck >= 60 then
                     pcall(function()
                         SmartTeleportToLobby()
                     end)
-                end)
-            end
-        else
-            if AntiStuck then
-                task.cancel(AntiStuck)
-                AntiStuck = nil
+                    secondsStuck = 0
+                end
+            else
+                secondsStuck = 0 
             end
         end
-    end
-
-    LocalPlayer:GetAttributeChangedSignal("Loading"):Connect(StuckState)
-    LocalPlayer:GetAttributeChangedSignal("Teleporting"):Connect(StuckState)
-
-    StuckState()
+    end)
 end
 
 StartAntiStuck()
