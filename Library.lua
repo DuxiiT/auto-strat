@@ -1060,27 +1060,19 @@ local function RunVoteSkip()
     end
 end
 
-local AutoReadyRunning = false
 local function StartAutoReady()
-    if AutoReadyRunning or not Globals.AutoReady then return end
+    if AutoReadyRunning or not Globals.AutoReady or GameState ~= "GAME" then return end
     AutoReadyRunning = true
+
     task.spawn(function()
-        while Globals.AutoReady do
-            if GameState == "GAME" then
-                pcall(function()
-                    local VoteUi = PlayerGui:FindFirstChild("ReactOverridesVote")
-                    local Container = VoteUi and VoteUi:FindFirstChild("Frame") 
-                        and VoteUi.Frame:FindFirstChild("votes") 
-                        and VoteUi.Frame.votes:FindFirstChild("container")
-                    local ReadyBtn = Container and Container:FindFirstChild("ready")
-                    
-                    if ReadyBtn and ReadyBtn.Visible == true then
-                        RunVoteSkip()
-                    end
-                end)
-            end
-            task.wait(1)
-        end
+        local VR = ReplicatedStorage:WaitForChild("StateReplicators"):WaitForChild("VoteReplicator")
+        
+        repeat task.wait(0.5) until VR:GetAttribute("Enabled") == true and VR:GetAttribute("Title") == "Ready?"
+        
+        RunVoteSkip()
+        
+        repeat task.wait(1) until VR:GetAttribute("Enabled") == false
+        
         AutoReadyRunning = false
     end)
 end
