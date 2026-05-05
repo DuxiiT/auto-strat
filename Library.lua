@@ -2008,7 +2008,7 @@ local Configuration = Window:Tab({Title = "Configuration", Icon = "sliders-horiz
                     Time = 3,
                     Type = "normal"
                 })
-            SaveSettings()
+            LoadSettings()
         end
     })
 
@@ -2254,7 +2254,7 @@ local Settings = Window:Tab({Title = "Settings", Icon = "settings"}) do
                     Time = 3,
                     Type = "normal"
                 })
-            LoadSettings()
+            SaveSettings()
         end
     })
 
@@ -2267,7 +2267,7 @@ local Settings = Window:Tab({Title = "Settings", Icon = "settings"}) do
                     Time = 3,
                     Type = "normal"
                 })
-            SaveSettings()
+            LoadSettings()
         end
     })
 
@@ -2828,15 +2828,26 @@ local function IsMapAvailable(name)
         end
     end
 
-repeat
+    local hasVoted = false
+
+    repeat
         local IntermissionFrame = PlayerGui:WaitForChild("ReactGameIntermission"):WaitForChild("Frame")
-        local VetoText = IntermissionFrame:WaitForChild("buttons"):WaitForChild("veto"):WaitForChild("value").Text
+        local VetoValue = IntermissionFrame.buttons.veto.value
+        local VetoText = VetoValue.Text
         
-        if IntermissionFrame.Visible and VetoText:match("Veto %(0/") then 
-            RemoteEvent:FireServer("LobbyVoting", "Veto") 
+        if VetoText ~= "" then
+            if not VetoText:find("Veto") then
+                return false 
+            end
+
+            local currentStr, totalStr = VetoText:match("(%d+)/(%d+)")
+            local current, total = tonumber(currentStr), tonumber(totalStr)
+
+            if not hasVoted and total and total > 0 and current == 0 then
+                RemoteEvent:FireServer("LobbyVoting", "Veto")
+                hasVoted = true
+            end
         end
-        
-        wait(1)
 
         local found = false
         for _, g in ipairs(workspace:GetDescendants()) do
@@ -2849,9 +2860,12 @@ repeat
             end
         end
 
-        local TotalPlayer = #PlayersService:GetChildren()
+        wait(1)
 
-    until found or VetoText == "Veto ("..TotalPlayer.."/"..TotalPlayer..")"
+        local TotalPlayer = #PlayersService:GetChildren()
+        local isFull = VetoText == "Veto ("..TotalPlayer.."/"..TotalPlayer..")"
+
+    until found or isFull
 
     for _, g in ipairs(workspace:GetDescendants()) do
         if g:IsA("SurfaceGui") and g.Name == "MapDisplay" then
