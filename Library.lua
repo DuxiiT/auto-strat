@@ -1,13 +1,28 @@
 local Globals = getgenv()
 
-local PlayersService = game:GetService("Players")
+-- // services & main refs
+local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = PlayersService.LocalPlayer or PlayersService.PlayerAdded:Wait()
 local GuiService = game:GetService("GuiService")
-local SmartTeleportToLobby
+local RunService = game:GetService("RunService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PathfindingService = game:GetService("PathfindingService")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local mouse = LocalPlayer:GetMouse()
+
+local RemoteFunc = ReplicatedStorage:WaitForChild("RemoteFunction")
+local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
+
+local FileName = "ADS_Config.json"
 local platform = UserInputService:GetPlatform()
 local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
+local SmartTeleportToLobby
 
 local function StartAntiStuck()
     task.spawn(function()
@@ -16,17 +31,25 @@ local function StartAntiStuck()
         while true do 
             task.wait(1)
             
-            local isLoading = LocalPlayer:GetAttribute("Loading") == true
-            local isTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+            local attrLoading = LocalPlayer:GetAttribute("Loading") == true
+            local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+            
+            local loadScreen = PlayerGui and PlayerGui:FindFirstChild("LoadingScreen")
+            local loadContent = loadScreen and loadScreen:FindFirstChild("content")
+            local isLoadVisible = loadContent and loadContent.Visible == true
+            
+            local countScreen = PlayerGui:FindFirstChild("PlayerCountdown")
+            local countFrame = countScreen and countScreen:FindFirstChild("Frame")
+            local isCountVisible = countFrame and countFrame.Visible == true
 
-            if isLoading or isTeleporting then
+            if attrLoading or attrTeleporting or isLoadVisible or isCountVisible then
                 secondsStuck = secondsStuck + 1
                 
                 if secondsStuck >= 60 then
                     pcall(function()
                         SmartTeleportToLobby()
                     end)
-                    secondsStuck = 0
+                    secondsStuck = 0 
                 end
             else
                 secondsStuck = 0 
@@ -36,8 +59,6 @@ local function StartAntiStuck()
 end
 
 StartAntiStuck()
-
-local GuiService = game:GetService("GuiService")
 
 local function Reconnect()
     local initial = GuiService:GetErrorMessage()
@@ -55,20 +76,6 @@ task.spawn(Reconnect)
 GuiService.ErrorMessageChanged:Connect(Reconnect)
 
 if not game:IsLoaded() then game.Loaded:Wait() end
-
--- // services & main refs
-local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
-local MarketplaceService = game:GetService("MarketplaceService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PathfindingService = game:GetService("PathfindingService")
-local HttpService = game:GetService("HttpService")
-local RemoteFunc = ReplicatedStorage:WaitForChild("RemoteFunction")
-local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
-local mouse = LocalPlayer:GetMouse()
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local FileName = "ADS_Config.json"
 
 task.spawn(function()
     local function DisableIdled()
@@ -2534,7 +2541,7 @@ local function GetAllRewards()
     return results
 end
 
-function SmartTeleportToLobby()
+SmartTeleportToLobby = function()
     local lobbyId = 3260590327
     
     pcall(function()
@@ -2892,7 +2899,7 @@ local function IsMapAvailable(name)
 
         wait(1)
 
-        local TotalPlayer = #PlayersService:GetChildren()
+        local TotalPlayer = #Players:GetChildren()
         local isFull = VetoText == "Veto ("..TotalPlayer.."/"..TotalPlayer..")"
 
     until found or isFull
