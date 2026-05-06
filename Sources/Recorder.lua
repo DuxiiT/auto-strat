@@ -492,6 +492,25 @@ return function(ctx)
             end
         end
 
+        if a1 == "Troops" and a2 == "Upgrade" and a3 == "Set" then
+            if type(a4) == "table" then
+                local tower = a4.Troop
+                local my_index = resolve_tower_index(tower)
+                local path = a4.Path or 1
+
+                if my_index and tower then
+                    local replicator = tower:FindFirstChild("TowerReplicator")
+                    local tower_name = replicator and replicator:GetAttribute("Name") or tower.Name
+
+                    local cmd = string.format("TDS:Upgrade(%d, %d)", my_index, path)
+            
+                    record_line(cmd, "Upgraded " .. tower_name .. " (Index: " .. my_index .. ")")
+                    handled = true
+                    return
+                end
+            end
+        end
+
         if a1 == "Troops" and a2 == "Option" and a3 == "Set" then
             if type(a4) == "table" then
                 local idx = resolve_tower_index(a4.Troop)
@@ -837,11 +856,6 @@ TDS:Mode("%s")%s
                 record_action(command)
                 Recorder:Log("Placed " .. tower_name .. " (Index: " .. my_index .. ")")
 
-                replicator:GetAttributeChangedSignal("Upgrade"):Connect(function()
-                    if not Globals.record_strat then return end
-                    record_action(string.format('TDS:Upgrade(%d)', my_index))
-                    Recorder:Log("Upgraded Tower " .. my_index)
-                end)
             end)
 
             towers_folder.ChildRemoved:Connect(function(tower)
