@@ -502,7 +502,12 @@ return function(ctx)
                     local replicator = tower:FindFirstChild("TowerReplicator")
                     local tower_name = replicator and replicator:GetAttribute("Name") or tower.Name
 
-                    local cmd = string.format("TDS:Upgrade(%d, %d)", my_index, path)
+                    local cmd
+                    if path > 1 then
+                        cmd = string.format("TDS:Upgrade(%d, %d)", my_index, path)
+                    else
+                        cmd = string.format("TDS:Upgrade(%d)", my_index)
+                    end
             
                     record_line(cmd, "Upgraded " .. tower_name .. " (Index: " .. my_index .. ")")
                     handled = true
