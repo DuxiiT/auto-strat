@@ -694,6 +694,12 @@ return function(ctx)
             Desc = "",
             Callback = function()
                 Recorder:Clear()
+
+                if not has_hook then
+                    Recorder:Log("\nYour executor is not supported for recording and is \nonly meant for replaying strats.")
+                    return
+                end
+
                 Recorder:Log("Recorder started")
 
                 local current_mode = "Unknown"
@@ -771,11 +777,6 @@ return function(ctx)
                 sync_existing_towers()
                 last_wave = 0
                 Globals.record_strat = true
-                if has_hook then
-                    Recorder:Log("Extended recording enabled")
-                else
-                    Recorder:Log("Limited recording (place/upgrade/sell)")
-                end
 
                 if writefile then
                     local game_info_str = ""
@@ -807,14 +808,16 @@ TDS:Mode("%s")%s
             Desc = "",
             Callback = function()
                 Globals.record_strat = false
-                Recorder:Clear()
-                Recorder:Log("Strategy saved, you may find it in \nyour workspace folder called 'Strat.txt'")
-                Window:Notify({
-                    Title = "ADS",
-                    Desc = "Recording has been saved! Check your workspace folder for Strat.txt",
-                    Time = 3,
-                    Type = "normal"
-                })
+                if has_hook then
+                    Recorder:Clear()
+                    Recorder:Log("Strategy saved, you may find it in \nyour workspace folder called 'Strat.txt'")
+                    Window:Notify({
+                        Title = "ADS",
+                        Desc = "Recording has been saved! Check your workspace folder for Strat.txt",
+                        Time = 3,
+                        Type = "normal"
+                    })
+                end
             end
         })
 
