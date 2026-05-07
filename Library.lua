@@ -1,64 +1,27 @@
 local Globals = getgenv()
 
--- // services & main refs
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
-local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
-local RunService = game:GetService("RunService")
-local MarketplaceService = game:GetService("MarketplaceService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PathfindingService = game:GetService("PathfindingService")
-local HttpService = game:GetService("HttpService")
-local VirtualUser = game:GetService("VirtualUser")
-
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local mouse = LocalPlayer:GetMouse()
 
-local RemoteFunc = ReplicatedStorage:WaitForChild("RemoteFunction")
-local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
-
-local FileName = "ADS_Config.json"
-local platform = UserInputService:GetPlatform()
-local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
-local SmartTeleportToLobby
-
-local function StartAntiStuck()
-    task.spawn(function()
-        local secondsStuck = 0
+local function SmartTeleportToLobby()
+    local lobbyId = 3260590327
+    pcall(function()
+        local platform = UserInputService:GetPlatform()
+        local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
         
-        while true do 
-            task.wait(1)
-            
-            local attrLoading = LocalPlayer:GetAttribute("Loading") == true
-            local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
-            
-            local loadScreen = PlayerGui and PlayerGui:FindFirstChild("LoadingScreen")
-            local loadContent = loadScreen and loadScreen:FindFirstChild("content")
-            local isLoadVisible = loadContent and loadContent.Visible == true
-            
-            local countScreen = PlayerGui:FindFirstChild("PlayerCountdown")
-            local countFrame = countScreen and countScreen:FindFirstChild("Frame")
-            local isCountVisible = countFrame and countFrame.Visible == true
-
-            if attrLoading or attrTeleporting or isLoadVisible or isCountVisible then
-                secondsStuck = secondsStuck + 1
-                
-                if secondsStuck >= 60 then
-                    pcall(function()
-                        SmartTeleportToLobby()
-                    end)
-                    secondsStuck = 0 
-                end
-            else
-                secondsStuck = 0 
-            end
+        if not IsMobile and Globals.PrivateCode and Globals.PrivateCode ~= "" then
+            game:GetService("ExperienceService"):LaunchExperience({
+                placeId = lobbyId, 
+                linkCode = Globals.PrivateCode
+            })
+        else
+            TeleportService:Teleport(lobbyId)
         end
     end)
 end
-
-StartAntiStuck()
 
 local function Reconnect()
     local initial = GuiService:GetErrorMessage()
@@ -72,23 +35,57 @@ local function Reconnect()
     end
 end
 
+local function AntiStuck()
+    task.spawn(function()
+        local secondsStuck = 0
+
+        while true do 
+            task.wait(1)
+            
+            local attrLoading = LocalPlayer:GetAttribute("Loading") == true
+            local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+            
+            local pg = LocalPlayer:FindFirstChild("PlayerGui")
+            local loadScreen = pg and pg:FindFirstChild("LoadingScreen")
+            local loadContent = loadScreen and loadScreen:FindFirstChild("content")
+            local isLoadVisible = loadContent and loadContent.Visible == true
+            
+            local countScreen = pg and pg:FindFirstChild("PlayerCountdown")
+            local countFrame = countScreen and countScreen:FindFirstChild("Frame")
+            local isCountVisible = countFrame and countFrame.Visible == true
+
+            if attrLoading or attrTeleporting or isLoadVisible or isCountVisible then
+                secondsStuck = secondsStuck + 1
+                if secondsStuck >= 60 then
+                    pcall(SmartTeleportToLobby)
+                    secondsStuck = 0 
+                end
+            else
+                secondsStuck = 0 
+            end
+        end
+    end)
+end
+
+AntiStuck()
 task.spawn(Reconnect)
 GuiService.ErrorMessageChanged:Connect(Reconnect)
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
-task.spawn(function()
-    local function DisableIdled()
-        local success, connections = pcall(getconnections, LocalPlayer.Idled)
-        if success then
-            for _, v in pairs(connections) do
-                v:Disable()
-            end
-        end
-    end
-
-    DisableIdled()
-end)
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PathfindingService = game:GetService("PathfindingService")
+local HttpService = game:GetService("HttpService")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local mouse = LocalPlayer:GetMouse()
+local RemoteFunc = ReplicatedStorage:WaitForChild("RemoteFunction")
+local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
+local FileName = "ADS_Config.json"
+local platform = UserInputService:GetPlatform()
+local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
 
 task.spawn(function()
     LocalPlayer.Idled:Connect(function()
