@@ -498,16 +498,11 @@ return function(ctx)
                 local my_index = resolve_tower_index(tower)
                 local path = a4.Path or 1
 
-                if my_index and tower then
+                if my_index and tower and results and results[1] == true then
                     local replicator = tower:FindFirstChild("TowerReplicator")
                     local tower_name = replicator and replicator:GetAttribute("Name") or tower.Name
 
-                    local cmd
-                    if path > 1 then
-                        cmd = string.format("TDS:Upgrade(%d, %d)", my_index, path)
-                    else
-                        cmd = string.format("TDS:Upgrade(%d)", my_index)
-                    end
+                    local cmd = (path > 1) and string.format("TDS:Upgrade(%d, %d)", my_index, path) or string.format("TDS:Upgrade(%d)", my_index)
             
                     record_line(cmd, "Upgraded " .. tower_name .. " (Index: " .. my_index .. ")")
                     handled = true
