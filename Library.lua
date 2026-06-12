@@ -189,6 +189,7 @@ local DefaultSettings = {
     AutoPremium = false,
     SupportCaravan = false,
     AutoDJ = false,
+    DJCustomSongID = "",
     AutoNecro = false,
     AutoRejoin = true,
     PrivateCode = "",
@@ -1115,6 +1116,39 @@ local function StartEasyMode()
     end)
 end
 
+local function AutoSetDJSong(tower)
+    task.spawn(function()
+        local replicator = tower:WaitForChild("TowerReplicator", 10)
+        if not replicator then return end
+        if replicator:GetAttribute("Name") ~= "DJ Booth" then return end
+        if replicator:GetAttribute("OwnerId") ~= LocalPlayer.UserId then return end
+        
+        local songIdNum = tonumber(Globals.DJCustomSongID)
+        if not songIdNum then return end
+        
+        pcall(function()
+            RemoteFunc:InvokeServer(
+                "Troops",
+                "Execute",
+                {
+                    Data = { songIdNum },
+                    Name = "Music",
+                    Tower = tower
+                }
+            )
+        end)
+    end)
+end
+
+task.spawn(function()
+    local Towers = workspace:WaitForChild("Towers", 10)
+    if not Towers then return end
+    Towers.ChildAdded:Connect(AutoSetDJSong)
+    for _, tower in ipairs(Towers:GetChildren()) do
+        AutoSetDJSong(tower)
+    end
+end)
+
 -- // ui
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
@@ -1230,6 +1264,25 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
         Value = Globals.AutoDJ,
         Callback = function(v)
             SetSetting("AutoDJ", v)
+        end
+    })
+
+    Automation:Textbox({
+        Title = "DJ Custom Music",
+        Desc = "Custom audio ID for your DJ Booth",
+        Placeholder = "Audio ID",
+        Value = Globals.DJCustomSongID or "",
+        ClearTextOnFocus = false,
+        Callback = function(value)
+            SetSetting("DJCustomSongID", value or "")
+            if not tonumber(value) then return end
+            task.spawn(function()
+                local TowersFolder = workspace:FindFirstChild("Towers")
+                if not TowersFolder then return end
+                for _, tower in ipairs(TowersFolder:GetChildren()) do
+                    AutoSetDJSong(tower)
+                end
+            end)
         end
     })
 
