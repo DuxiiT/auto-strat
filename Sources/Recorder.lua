@@ -671,17 +671,32 @@ return function(ctx)
 
             if not Globals.__tds_recorder_hooked then
                 Globals.__tds_recorder_hooked = true
-                local original
-                original = hookmetamethod(game, "__namecall", function(self, ...)
-                    local method = getnamecallmethod and getnamecallmethod() or nil
+                
+                local originalFire
+                originalFire = hookfunction(Instance.new("RemoteEvent").FireServer, function(self, ...)
                     local args = {...}
-                    local results = table.pack(original(self, ...))
+                    local results = table.pack(originalFire(self, ...))
                     local handler = Globals.__tds_recorder_handler
-                    if handler and method then
+                    if handler then
                         task.spawn(function()
                             local set_id = setthreadidentity or setidentity or setthreadcontext
                             if set_id then set_id(7) end
-                            pcall(handler, self, method, args, results)
+                            pcall(handler, self, "FireServer", args, results)
+                        end)
+                    end
+                    return table.unpack(results, 1, results.n)
+                end)
+
+                local originalInvoke
+                originalInvoke = hookfunction(Instance.new("RemoteFunction").InvokeServer, function(self, ...)
+                    local args = {...}
+                    local results = table.pack(originalInvoke(self, ...))
+                    local handler = Globals.__tds_recorder_handler
+                    if handler then
+                        task.spawn(function()
+                            local set_id = setthreadidentity or setidentity or setthreadcontext
+                            if set_id then set_id(7) end
+                            pcall(handler, self, "InvokeServer", args, results)
                         end)
                     end
                     return table.unpack(results, 1, results.n)
