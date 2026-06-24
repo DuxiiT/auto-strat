@@ -90,6 +90,7 @@ local function AntiStuck()
 		local isloading = attrLoading or attrTeleporting or isLoadVisible or isCountVisible
         local secondsStuck = 0
         while true and task.wait(1) and isloading do 
+			isloading = attrLoading or attrTeleporting or isLoadVisible or isCountVisible
             if isloading then
                 secondsStuck += 1
                 if secondsStuck >= 60 then
