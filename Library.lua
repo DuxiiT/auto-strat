@@ -75,22 +75,21 @@ end
 
 local function AntiStuck()
     task.spawn(function()
-        local attrLoading = LocalPlayer:GetAttribute("Loading") == true
-        local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
-        
-        local pg = LocalPlayer:FindFirstChild("PlayerGui")
-        local loadScreen = pg and pg:FindFirstChild("LoadingScreen")
-        local loadContent = loadScreen and loadScreen:FindFirstChild("content")
-        local isLoadVisible = loadContent and loadContent.Visible == true
-            
-        local countScreen = pg and pg:FindFirstChild("PlayerCountdown")
-        local countFrame = countScreen and countScreen:FindFirstChild("Frame")
-        local isCountVisible = countFrame and countFrame.Visible == true
+		local isloading = true
+		local secondsStuck = 0
+        while true and task.wait(1) and isloading do
+			local pg = LocalPlayer:FindFirstChild("PlayerGui")
+        	local loadScreen = pg and pg:FindFirstChild("LoadingScreen")
+        	local loadContent = loadScreen and loadScreen:FindFirstChild("content")
+        	local countScreen = pg and pg:FindFirstChild("PlayerCountdown")
+        	local countFrame = countScreen and countScreen:FindFirstChild("Frame")
 
-		local isloading = attrLoading or attrTeleporting or isLoadVisible or isCountVisible
-        local secondsStuck = 0
-        while true and task.wait(1) and isloading do 
+			local attrLoading = LocalPlayer:GetAttribute("Loading") == true
+        	local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+			local isLoadVisible = loadContent and loadContent.Visible == true
+			local isCountVisible = countFrame and countFrame.Visible == true
 			isloading = attrLoading or attrTeleporting or isLoadVisible or isCountVisible
+
             if isloading then
                 secondsStuck += 1
                 if secondsStuck >= 60 then
