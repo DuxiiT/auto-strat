@@ -6,71 +6,6 @@ local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
-local function SmartTeleportToLobby()
-    local lobbyId = 3260590327
-    pcall(function()
-        local platform = UserInputService:GetPlatform()
-        local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
-        
-        if not IsMobile and Globals.PrivateCode and Globals.PrivateCode ~= "" then
-            game:GetService("ExperienceService"):LaunchExperience({
-                placeId = lobbyId, 
-                linkCode = Globals.PrivateCode
-            })
-        else
-            TeleportService:Teleport(lobbyId)
-        end
-    end)
-end
-
-local function Reconnect()
-    local initial = GuiService:GetErrorMessage()
-    if initial and initial ~= "" then
-        task.wait(5)
-        if GuiService:GetErrorMessage() == initial then
-            pcall(function()
-                TeleportService:TeleportReconnect()
-            end)
-        end
-    end
-end
-
-local function AntiStuck()
-    task.spawn(function()
-        local secondsStuck = 0
-
-        while true do 
-            task.wait(1)
-            
-            local attrLoading = LocalPlayer:GetAttribute("Loading") == true
-            local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
-            
-            local pg = LocalPlayer:FindFirstChild("PlayerGui")
-            local loadScreen = pg and pg:FindFirstChild("LoadingScreen")
-            local loadContent = loadScreen and loadScreen:FindFirstChild("content")
-            local isLoadVisible = loadContent and loadContent.Visible == true
-            
-            local countScreen = pg and pg:FindFirstChild("PlayerCountdown")
-            local countFrame = countScreen and countScreen:FindFirstChild("Frame")
-            local isCountVisible = countFrame and countFrame.Visible == true
-
-            if attrLoading or attrTeleporting or isLoadVisible or isCountVisible then
-                secondsStuck = secondsStuck + 1
-                if secondsStuck >= 60 then
-                    pcall(SmartTeleportToLobby)
-                    secondsStuck = 0 
-                end
-            else
-                secondsStuck = 0 
-            end
-        end
-    end)
-end
-
-AntiStuck()
-task.spawn(Reconnect)
-GuiService.ErrorMessageChanged:Connect(Reconnect)
-
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local VirtualUser = game:GetService("VirtualUser")
@@ -86,6 +21,91 @@ local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local FileName = "ADS_Config.json"
 local platform = UserInputService:GetPlatform()
 local IsMobile = (platform == Enum.Platform.IOS or platform == Enum.Platform.Android)
+
+local SmartTeleportToLobby = function()
+    local lobbyId = 3260590327
+    
+    pcall(function()
+        if not IsMobile and Globals.PrivateCode and Globals.PrivateCode ~= "" then
+            game:GetService("ExperienceService"):LaunchExperience({
+                placeId = lobbyId, 
+                linkCode = Globals.PrivateCode
+            })
+        else
+            TeleportService:Teleport(lobbyId)
+        end
+    end)
+
+    task.wait(10)
+
+    Window:Notify({
+        Title = "Teleport Failed",
+        Desc = "It looks like you're stuck! If you are using Delta, please ensure that 'Verify Teleports' is disabled in your settings.",
+        Time = 9999,
+        Type = "error"
+    })
+
+    task.wait(5)
+
+    Window:Notify({
+        Title = "Fixing Delta Teleport Issues",
+        Desc = "1. Disconnect from the game\n" ..
+               "2. Completely empty your 'autoexecute' folder\n" ..
+               "3. Reopen Roblox and join the game\n" ..
+               "4. Go to Delta settings and disable 'Verify Teleports'\n" ..
+               "5. Disconnect and rejoin to confirm 'Verify Teleports' remains OFF\n" ..
+               "6. Once verified, restore your files to 'autoexecute' and rejoin",
+        Time = 9999,
+        Type = "normal"
+    })
+end
+
+
+local function Reconnect()
+    local initial = GuiService:GetErrorMessage()
+    if initial and initial ~= "" then
+        task.wait(5)
+        if GuiService:GetErrorMessage() == initial then
+            pcall(function()
+                TeleportService:TeleportReconnect()
+            end)
+        end
+    end
+end
+
+local function AntiStuck()
+    task.spawn(function()
+        local attrLoading = LocalPlayer:GetAttribute("Loading") == true
+        local attrTeleporting = LocalPlayer:GetAttribute("Teleporting") == true
+        
+        local pg = LocalPlayer:FindFirstChild("PlayerGui")
+        local loadScreen = pg and pg:FindFirstChild("LoadingScreen")
+        local loadContent = loadScreen and loadScreen:FindFirstChild("content")
+        local isLoadVisible = loadContent and loadContent.Visible == true
+            
+        local countScreen = pg and pg:FindFirstChild("PlayerCountdown")
+        local countFrame = countScreen and countScreen:FindFirstChild("Frame")
+        local isCountVisible = countFrame and countFrame.Visible == true
+
+		local isloading = attrLoading or attrTeleporting or isLoadVisible or isCountVisible
+        local secondsStuck = 0
+        while true and task.wait(1) and isloading do 
+            if isloading then
+                secondsStuck += 1
+                if secondsStuck >= 60 then
+                    pcall(SmartTeleportToLobby)
+                    secondsStuck = 0
+                end
+            else
+                secondsStuck = 0 
+            end
+        end
+    end)
+end
+
+AntiStuck()
+task.spawn(Reconnect)
+GuiService.ErrorMessageChanged:Connect(Reconnect)
 
 task.spawn(function()
     LocalPlayer.Idled:Connect(function()
@@ -219,21 +239,14 @@ local DefaultSettings = {
 
 local TimeScaleValues = {0.5, 1, 1.5, 2}
 
-local function NormalizeTimeScaleValue(val)
+local function NormalizeTimeScaleValue(val, fallback)
     val = tonumber(val)
-    if not val then
-        return nil
-    end
-    for _, v in ipairs(TimeScaleValues) do
-        if v == val then
-            return v
-        end
-    end
-    return nil
-end
-
-local function CoerceTimeScaleValue(val, fallback)
-    return NormalizeTimeScaleValue(val) or fallback
+	if val then
+		if table.find(TimeScaleValues, val)	then
+			return val
+		end
+	end
+	return fallback
 end
 
 local function GetTimescaleFrame()
@@ -308,7 +321,6 @@ local function LoadSettings()
             data = HttpService:JSONDecode(readfile(FileName))
         end)
     end
-
     for key, DefaultVal in pairs(DefaultSettings) do
         if Globals[key] == nil then
             if data[key] ~= nil then
@@ -318,14 +330,13 @@ local function LoadSettings()
             end
         end
     end
-    
     SaveSettings()
 end
 
 local function SetSetting(name, value)
     if DefaultSettings[name] ~= nil then
         if name == "TimeScaleValue" then
-            value = CoerceTimeScaleValue(value, Globals.TimeScaleValue or 2)
+            value = NormalizeTimeScaleValue(value, Globals.TimeScaleValue or 2)
         end
         Globals[name] = value
         SaveSettings()
@@ -366,7 +377,7 @@ local function Apply3dRendering()
 end
 
 LoadSettings()
-Globals.TimeScaleValue = CoerceTimeScaleValue(Globals.TimeScaleValue, 2)
+Globals.TimeScaleValue = NormalizeTimeScaleValue(Globals.TimeScaleValue, 2)
 Apply3dRendering()
 
 Globals.HideUsername = true
@@ -1617,7 +1628,7 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
         Value = tostring(Globals.TimeScaleValue or 2),
         Callback = function(choice)
             local selected = type(choice) == "table" and choice[1] or choice
-            local value = CoerceTimeScaleValue(selected, Globals.TimeScaleValue or 2)
+            local value = NormalizeTimeScaleValue(selected, Globals.TimeScaleValue or 2)
             SetSetting("TimeScaleValue", value)
             if Globals.TimeScaleEnabled then
                 ApplyTimeScaleOnce()
@@ -2591,44 +2602,6 @@ local function GetAllRewards()
     return results
 end
 
-SmartTeleportToLobby = function()
-    local lobbyId = 3260590327
-    
-    pcall(function()
-        if not IsMobile and Globals.PrivateCode and Globals.PrivateCode ~= "" then
-            game:GetService("ExperienceService"):LaunchExperience({
-                placeId = lobbyId, 
-                linkCode = Globals.PrivateCode
-            })
-        else
-            TeleportService:Teleport(lobbyId)
-        end
-    end)
-
-    task.wait(10)
-
-    Window:Notify({
-        Title = "Teleport Failed",
-        Desc = "It looks like you're stuck! If you are using Delta, please ensure that 'Verify Teleports' is disabled in your settings.",
-        Time = 9999,
-        Type = "error"
-    })
-
-    task.wait(5)
-
-    Window:Notify({
-        Title = "Fixing Delta Teleport Issues",
-        Desc = "1. Disconnect from the game\n" ..
-               "2. Completely empty your 'autoexecute' folder\n" ..
-               "3. Reopen Roblox and join the game\n" ..
-               "4. Go to Delta settings and disable 'Verify Teleports'\n" ..
-               "5. Disconnect and rejoin to confirm 'Verify Teleports' remains OFF\n" ..
-               "6. Once verified, restore your files to 'autoexecute' and rejoin",
-        Time = 9999,
-        Type = "normal"
-    })
-end
-
 -- // rejoining
 local function RejoinMatch()
     local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
@@ -3043,7 +3016,7 @@ ApplyTimeScaleOnce = function()
         return
     end
 
-    local desired = CoerceTimeScaleValue(Globals.TimeScaleValue, 2)
+    local desired = NormalizeTimeScaleValue(Globals.TimeScaleValue, 2)
     if not desired then
         return
     end
