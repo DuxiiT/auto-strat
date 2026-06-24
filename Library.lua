@@ -6,6 +6,7 @@ local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
+local Window
 local function SmartTeleportToLobby()
     local lobbyId = 3260590327
     pcall(function()
@@ -19,6 +20,30 @@ local function SmartTeleportToLobby()
             })
         else
             TeleportService:Teleport(lobbyId)
+        end
+    end)
+
+    task.spawn(function()
+        task.wait(10)
+        if Window then
+            Window:Notify({
+                Title = "Teleport Failed",
+                Desc = "It looks like you're stuck! If you are using Delta, please ensure that 'Verify Teleports' is disabled in your settings.",
+                Time = 9999,
+                Type = "error"
+            })
+            task.wait(5)
+            Window:Notify({
+                Title = "Fixing Delta Teleport Issues",
+                Desc = "1. Disconnect from the game\n" ..
+                       "2. Completely empty your 'autoexecute' folder\n" ..
+                       "3. Reopen Roblox and join the game\n" ..
+                       "4. Go to Delta settings and disable 'Verify Teleports'\n" ..
+                       "5. Disconnect and rejoin to confirm 'Verify Teleports' remains OFF\n" ..
+                       "6. Once verified, restore your files to 'autoexecute' and rejoin",
+                Time = 9999,
+                Type = "normal"
+            })
         end
     end)
 end
@@ -1152,7 +1177,7 @@ end)
 -- // ui
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
-local Window = Library:Window({
+Window = Library:Window({
     Title = "Aether Hub",
     Desc = "your #1 hub",
     Theme = "Default",
@@ -2589,44 +2614,6 @@ local function GetAllRewards()
     end
 
     return results
-end
-
-SmartTeleportToLobby = function()
-    local lobbyId = 3260590327
-    
-    pcall(function()
-        if not IsMobile and Globals.PrivateCode and Globals.PrivateCode ~= "" then
-            game:GetService("ExperienceService"):LaunchExperience({
-                placeId = lobbyId, 
-                linkCode = Globals.PrivateCode
-            })
-        else
-            TeleportService:Teleport(lobbyId)
-        end
-    end)
-
-    task.wait(10)
-
-    Window:Notify({
-        Title = "Teleport Failed",
-        Desc = "It looks like you're stuck! If you are using Delta, please ensure that 'Verify Teleports' is disabled in your settings.",
-        Time = 9999,
-        Type = "error"
-    })
-
-    task.wait(5)
-
-    Window:Notify({
-        Title = "Fixing Delta Teleport Issues",
-        Desc = "1. Disconnect from the game\n" ..
-               "2. Completely empty your 'autoexecute' folder\n" ..
-               "3. Reopen Roblox and join the game\n" ..
-               "4. Go to Delta settings and disable 'Verify Teleports'\n" ..
-               "5. Disconnect and rejoin to confirm 'Verify Teleports' remains OFF\n" ..
-               "6. Once verified, restore your files to 'autoexecute' and rejoin",
-        Time = 9999,
-        Type = "normal"
-    })
 end
 
 -- // rejoining
