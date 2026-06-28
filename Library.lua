@@ -1189,14 +1189,25 @@ Window = Library:Window({
     }
 })
 
-if not LocalPlayer:IsInGroup(4914494) then
-    Window:Notify({
-        Title = "Warning",
-        Desc = "Please consider joining the Paradoxum Group. Otherwise, strategies may not work for you.",
-        Time = 25,
-        Type = "error"
-    })
-end
+task.spawn(function()
+    local retries = 0
+    while retries < 10 do
+        local success, inGroup = pcall(LocalPlayer.IsInGroup, LocalPlayer, 4914494)
+        if success then
+            if not inGroup then
+                Window:Notify({
+                    Title = "Warning",
+                    Desc = "Please consider joining the Paradoxum Group. Otherwise, strategies may not work for you.",
+                    Time = 25,
+                    Type = "error"
+                })
+            end
+            break
+        end
+        retries += 1
+        task.wait(1)
+    end
+end)
 
 local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
     
