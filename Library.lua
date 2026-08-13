@@ -1353,6 +1353,8 @@ local Automation = Window:Tab({Title = "Automation", Icon = "bot"}) do
         end
     })
 
+    -- Auto Progress Here
+    
     Automation:Section({Title = "Auto-Abilities"})
     
     Automation:Toggle({
