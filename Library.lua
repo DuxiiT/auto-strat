@@ -255,6 +255,7 @@ local DefaultSettings = {
     tagName = "None",
     Modifiers = {},
     AutoProgressionMode = "None",
+    AutoProgressionLoader = false,
     AutoProgressionEnabled = false,
     ProgressionWebhookURL = "",
     SendProgressionWebhook = false,
@@ -2165,7 +2166,29 @@ end
 
 Window:Line()
 
+
 local Progression = Window:Tab({Title = "Progression", Icon = "settings"}) do
+    Progression:Toggle({
+        Title = "Auto Progression By Rya (Temporary, uses diff key system)",
+        Desc = "Loads Rya Auto Progress - WORKING",
+        Value = Globals.AutoProgressionLoader or false,
+        Callback = function(v)
+            SetSetting("AutoProgressionLoader", v)
+
+            if v then
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/Ceepizz/rya/refs/heads/main/progloader.lua"))()
+
+                repeat
+                    task.wait()
+                until game:GetService("CoreGui"):FindFirstChild("RyaProgressController")
+
+                local aetherGui = game:GetService("CoreGui"):FindFirstChild("Aether")
+                if aetherGui then
+                    aetherGui:Destroy()
+                end
+            end
+        end
+    })
     Progression:Section({Title = "Account Statistics"})
 
     Progression:Label({Title = "Coins: " .. tostring(game.Players.LocalPlayer.Coins.Value)})
