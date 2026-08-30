@@ -2169,8 +2169,8 @@ Window:Line()
 
 local Progression = Window:Tab({Title = "Progression", Icon = "settings"}) do
     Progression:Toggle({
-        Title = "Auto Progression By Rya (Temporary, uses diff key system)",
-        Desc = "Loads Rya Auto Progress - WORKING",
+        Title = "Auto Progression By Rya (Better version)",
+        Desc = "Loads Ryas Auto Progress (Discord ID: 1088319992115757087)",
         Value = Globals.AutoProgressionLoader or false,
         Callback = function(v)
             SetSetting("AutoProgressionLoader", v)
