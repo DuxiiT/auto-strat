@@ -3800,10 +3800,35 @@ function TDS:MedicSelect(idx, val)
     return false
 end
 
+local MedicChainAPI
+
+function TDS:MedicChain(...)
+    if not MedicChainAPI then
+        local loaded = loadstring(game:HttpGet(
+            "https://raw.githubusercontent.com/Ceepizz/rya/refs/heads/main/api"
+        ))()
+
+        if type(loaded) == "table"
+            and type(loaded.MedicChain) == "function" then
+
+            MedicChainAPI = loaded.MedicChain
+
+        elseif type(loaded) == "function" then
+            MedicChainAPI = loaded
+
+        else
+            warn("[MedicChain] Failed to load API")
+            return false
+        end
+    end
+
+    return MedicChainAPI(self, ...)
+end
+
 local function strategyRecordingSetup()
     local originalMethods = {}
     local recordableMethods = {
-        "Mode", "Place", "Upgrade", "SetTarget", "Sell", "SellAll", "Ability", "SetOption", "MedicSelect", "Ready", "VoteSkip", "WaitForWave", "UnlockTimeScale", "TimeScale"
+        "Mode", "Place", "Upgrade", "SetTarget", "Sell", "SellAll", "Ability", "SetOption", "MedicSelect", "MedicChain", "Ready", "VoteSkip", "WaitForWave", "UnlockTimeScale", "TimeScale"
     }
 
     for _, methodName in ipairs(recordableMethods) do
