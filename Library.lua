@@ -194,7 +194,6 @@ local GatlifyExecuted = false
 local IsCurrentlyLoading = false
 local LastLoadTime = 0
 local AutoPremiumRunning = false
-local StackerErrorShown = false
 local PremiumLoaded = false
 
 local MaxPathDistance = 300 -- default
@@ -1791,7 +1790,7 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
         end
     })
     
-    local UnlockBtn = Interactive:Button({
+    Interactive:Button({
         Title = "Unlock Premium Features",
         Desc = "Required Key System to access Premium features",
         Callback = function()
@@ -2123,6 +2122,8 @@ local Configuration = Window:Tab({Title = "Configuration", Icon = "sliders-horiz
 
     Configuration:Section({Title = "Experimental Features"})
     
+    local StickerSpam = false
+
     Configuration:Toggle({
         Title = "Sticker Spam",
         Desc = "This will drop everyones FPS to like 5 (you will not be able to see this unless you have an alt)",
