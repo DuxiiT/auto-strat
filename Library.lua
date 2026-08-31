@@ -1136,6 +1136,8 @@ local function RunVoteSkip()
     end
 end
 
+AutoReadyRunning = false
+
 local function StartAutoReady()
     if AutoReadyRunning or not Globals.AutoReady or GameState ~= "GAME" then return end
     AutoReadyRunning = true
