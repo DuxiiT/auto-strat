@@ -3028,7 +3028,7 @@ local function IsMapAvailable(name)
             end
         end
 
-        wait(1)
+        task.wait(1)
 
         local TotalPlayer = #Players:GetChildren()
         local isFull = VetoText == "Veto ("..TotalPlayer.."/"..TotalPlayer..")"
