@@ -293,8 +293,6 @@ end
 local StartTimeScale
 local ApplyTimeScaleOnce
 
-local LastState = {}
-
 -- // icon item ids ill add more soon arghh
 local ItemNames = {
     ["17447507910"] = "Timescale Ticket(s)",
