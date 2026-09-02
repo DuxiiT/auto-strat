@@ -4665,69 +4665,30 @@ local function StartSellFarm()
     end)
 end
 
-local AutoMedicLib = nil
-
-local function StopMedicChain()
-    if AutoMedicLib then
-        
-        AutoMedicLib.Chain("Universal", {}, false)
-    end
-    AutoMedicRunning = false
-end
+local AutoMedicModule = nil
 
 local function StartMedicChain()
-    AutoMedicRunning = true
-
-    task.spawn(function()
-
-        local myMedics = {}
-        repeat
-            myMedics = {}
-            local towersFolder = game:GetService("Workspace"):FindFirstChild("Towers")
-            
-            if towersFolder then
-                for _, tower in ipairs(towersFolder:GetChildren()) do
-                    local replicator = tower:FindFirstChild("TowerReplicator")
-                    if replicator then
-                        local ownerId = replicator:GetAttribute("OwnerId")
-                        local ownerName = replicator:GetAttribute("OwnerName")
-                        local towerName = replicator:GetAttribute("Name")
-
-                        local localPlayer = game:GetService("Players").LocalPlayer
-                        local isOwner = (ownerId and ownerId == localPlayer.UserId) or (ownerName and ownerName == localPlayer.Name)
-
-                        if isOwner and towerName and string.lower(towerName) == "medic" then
-                            table.insert(myMedics, tower)
-                        end
-                    end
-                end
-            end
-            
-            
-            if #myMedics == 0 then
-                task.wait(1)
-            end
-        until #myMedics > 0 or not Globals.AutoMedic
-
-        if not Globals.AutoMedic then
-            AutoMedicRunning = false
-            return
+    if Globals.AutoMedic then
+        if AutoMedicModule and AutoMedicModule.State and AutoMedicModule.State.Running then 
+            return 
         end
-        if not AutoMedicLib then
-    local success, loadedLib = pcall(function()
-        local url = "https://raw.githubusercontent.com/AmonguszzZ/ModdedAether/refs/heads/main/AutoAbilities/AutoMedic.lua"
-        return loadstring(game:HttpGet(url))()
-    end)
-
+        if not AutoMedicModule then
+            local success, loadedLib = pcall(function()
+                local url = "https://raw.githubusercontent.com/AmonguszzZ/ModdedAether/refs/heads/main/AutoAbilities/AutoMedicNew.lua"
+                return loadstring(game:HttpGet(url))()
+            end)
             if success and loadedLib then
-                AutoMedicLib = loadedLib
-            else
-                AutoMedicRunning = false
-                return
+                AutoMedicModule = loadedLib
             end
         end
-        AutoMedicLib.Chain("Universal", {"Gatling Gun", "Evolved Juggernaut", "Juggernaut"}, true)
-    end)
+        if AutoMedicModule then
+            AutoMedicModule.Chaining()
+        end
+    else
+        if AutoMedicModule and AutoMedicModule.State then
+            AutoMedicModule.State.Running = false
+        end
+    end
 end
 
 function RunAutoTrials()
@@ -4857,8 +4818,6 @@ task.spawn(function()
 
          if Globals.AutoMedic and not AutoMedicRunning then
             StartMedicChain()
-        elseif not Globals.AutoMedic and AutoMedicRunning then
-            StopMedicChain()
         end
 
         task.wait(1)
