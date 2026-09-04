@@ -2354,33 +2354,6 @@ end
 
 Window:Line()
 
-Window:Line()
-
-local Strategies = Window:Tab({Title = "Auto Trials", Icon = "clipboard-list"}) do
---im plannin to make this use return type to make the mainhub less huslle working on it sorry horse UwU
-
-Strategies:Section({Title = "Auto Trials"})
-
-Strategies:Label({Title = "Auto Trials", Desc = "Speedy: Hacker, Gatling Gun, Militant, Mercenary Base, Trapper\nGlass: Hacker, Gatling Gun, Militant, Mercenary Base, Trapper\nQuarantine: Hacker, Gatling Gun, Militant, Mercenary Base, DJ Booth\nFog: Trapper, Hacker, Gatling Gun, Mercenary Base, DJ Booth\nLimitation: Trapper, Hacker, Gatling Gun, Mercenary Base, DJ Booth\nFlying: Hacker, Gatling Gun, Militant, Mercenary Base, DJ Booth\nJailed: Hacker, Gatling Gun, Militant, Mercenary Base, Military Base\nExploding: Hacker, Gatling Gun, Militant, Mercenary Base, DJ Booth\nInflation: Placeholder\nCommited: Placeholder\nHidden: Gatling Gun, Hacker, Mercenary Base, Trapper, DJ Booth\nBroke: Gatling Gun, Hacker, Mercenary Base, Trapper, DJ Booth\nHealthy Enemies: Placeholder"})
-
---
-Strategies:Toggle({
-    Title = "Run",
-    Desc = "Enables auto trials dynamically based on requirements.",
-    Value = Globals.AutoTrials,
-    Callback = function(v)
-        SetSetting("AutoTrials", v)
-        if not v then 
-            print("[AutoTrials] Auto trials disabled.") 
-            return 
-        end
-    end
-})
-
-end
-
-Window:Line()
-
 Logger = Window:Tab({Title = "Logger", Icon = "terminal"}) do
     Logger = Logger:CreateLogger({
         Title = "STRATEGY LOGGER:",
@@ -4685,57 +4658,6 @@ local function StartMedicChain()
     end
 end
 
-function RunAutoTrials()
-    if AutoTrialsRunning or not Globals.AutoTrials then return end
-    AutoTrialsRunning = true
-
-    task.spawn(function()
-        pcall(function()
-            local success = false
-            local missingText = "GetMissingTower"
-            local content = game:HttpGet("https://raw.githubusercontent.com/AmonguszzZ/ModdedAether/refs/heads/main/Func/AutoTrials.lua")
-            local module = content and loadstring(content)()
-            
-            if type(module) == "table" then
-                if type(module.RunAutoTrial) == "function" then
-                    success = module.RunAutoTrial()
-                end
-                
-                if not success and type(module.GetMissingTower) == "function" then
-                    local missingData = module.GetMissingTower()
-                    local details = {}
-                    
-                    for trialName, info in pairs(missingData) do
-                        local towersStr = #info.MissingTowers > 0 and table.concat(info.MissingTowers, ", ") or "None"
-                        table.insert(details, string.format("%s [Towers: %s]", trialName, towersStr))
-                    end
-                    
-                    if #details > 0 then
-                        missingText = "Missing:\n" .. table.concat(details, "\n")
-                    end
-                end
-            elseif type(module) == "function" then
-                success = module()
-            else
-                print("[AutoTrials] Error: Invalid execution method")
-            end
-
-            if not success then
-                Globals.AutoTrials = false
-                SetSetting("AutoTrials", false)
-                
-                Window:Notify({
-                    Title = "Trial Requirements Not Met",
-                    Desc = missingText,
-                    Time = 10,
-                    Type = "normal"
-                })
-            end
-        end)
-        AutoTrialsRunning = false
-    end)
-end
-
 task.spawn(function()
     while true do
         if Globals.AutoPickups and not AutoPickupsRunning then
@@ -4804,10 +4726,6 @@ task.spawn(function()
 
         if Globals.Easy and not EasyModeRunning then
             StartEasyMode()
-        end
-
-        if Globals.AutoTrials and not AutoTrialsRunning then
-            RunAutoTrials()
         end
 
          if Globals.AutoMedic and not AutoMedicRunning then
