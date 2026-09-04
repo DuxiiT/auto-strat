@@ -2731,16 +2731,10 @@ local function RejoinMatch()
                         mode = "halloween",
                         count = 1
                     }
-                elseif CurrentMode == "Hardcore" then
+                elseif tostring(EventMode or ""):lower() == "hardcore" then
                     payload = {
+                        difficulty = CurrentMode,
                         mode = "hardcore",
-                        difficulty = "Easy",
-                        count = 1
-                    }
-                elseif CurrentMode == "Voidcore" then
-                    payload = {
-                        mode = "hardcore",
-                        difficulty = "Hard",
                         count = 1
                     }
                 elseif CurrentMode == "PollutedWasteland" then
