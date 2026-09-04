@@ -2195,7 +2195,7 @@ local Progression = Window:Tab({Title = "Progression", Icon = "settings"}) do
 
                 repeat
                     task.wait()
-                until game:GetService("CoreGui"):FindFirstChild("RyaProgressController")
+                until game:GetService("CoreGui"):FindFirstChild("Progress")
 
                 local aetherGui = game:GetService("CoreGui"):FindFirstChild("Aether")
                 if aetherGui then
