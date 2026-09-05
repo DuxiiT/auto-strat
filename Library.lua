@@ -193,6 +193,7 @@ local GatlifyRunning = false
 local GatlifyExecuted = false
 local IsCurrentlyLoading = false
 local LastLoadTime = 0
+local IsEquippingLoadout = false
 local AutoPremiumRunning = false
 local PremiumLoaded = false
 
@@ -323,6 +324,8 @@ local executed_actions = {}
 TDS = {
     PlacedTowers = {},
     ActiveStrat = true,
+    IsEquippingLoadout = false,
+    LoadoutPending = false,
     MatchmakingMap = {
         ["PizzaParty"] = "halloween",
         ["Badlands"] = "badlands",
@@ -1017,8 +1020,8 @@ function TDS:Addons(SkipGameState)
         return true
     end
     
-    while IsCurrentlyLoading or (os.clock() - LastLoadTime < 5) do 
-        task.wait(0.1) 
+    while IsCurrentlyLoading or IsEquippingLoadout or (TDS and TDS.LoadoutPending) or (os.clock() - LastLoadTime < 5) do 
+        task.wait(0.2) 
     end
 
     local originalPlace = self.Place
@@ -3448,61 +3451,78 @@ function TDS:Loadout(...)
         return
     end
 
+    while IsCurrentlyLoading do
+        task.wait(0.2)
+    end
+
+    IsCurrentlyLoading = true
+    IsEquippingLoadout = true
+    self.IsEquippingLoadout = true
+
     local towers = {...}
     local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
     local StateReplicators = ReplicatedStorage:FindFirstChild("StateReplicators")
 
-    local CurrentlyEquipped = {}
+    local success = pcall(function()
+        local CurrentlyEquipped = {}
 
-    if StateReplicators then
-        for _, folder in ipairs(StateReplicators:GetChildren()) do
-            if folder.Name == "PlayerReplicator" and folder:GetAttribute("UserId") == LocalPlayer.UserId then
-                local EquippedAttr = folder:GetAttribute("EquippedTowers")
-                if type(EquippedAttr) == "string" then
-                    local CleanedJson = EquippedAttr:match("%[.*%]") 
-                    local DecodeSuccess, decoded = pcall(function()
-                        return HttpService:JSONDecode(CleanedJson)
-                    end)
+        if StateReplicators then
+            for _, folder in ipairs(StateReplicators:GetChildren()) do
+                if folder.Name == "PlayerReplicator" and folder:GetAttribute("UserId") == LocalPlayer.UserId then
+                    local EquippedAttr = folder:GetAttribute("EquippedTowers")
+                    if type(EquippedAttr) == "string" then
+                        local CleanedJson = EquippedAttr:match("%[.*%]") 
+                        local DecodeSuccess, decoded = pcall(function()
+                            return HttpService:JSONDecode(CleanedJson)
+                        end)
 
-                    if DecodeSuccess and type(decoded) == "table" then
-                        CurrentlyEquipped = decoded
+                        if DecodeSuccess and type(decoded) == "table" then
+                            CurrentlyEquipped = decoded
+                        end
                     end
                 end
             end
         end
-    end
 
-    for _, CurrentTower in ipairs(CurrentlyEquipped) do
-        if CurrentTower ~= "None" then
-            local UnequipDone = false
-            repeat
-                local ok = pcall(function()
-                    remote:FireServer("Inventory", "Unequip", "Tower", CurrentTower)
-                    task.wait(0.3)
-                end)
-                if ok then UnequipDone = true else task.wait(0.2) end
-            until UnequipDone
+        for _, CurrentTower in ipairs(CurrentlyEquipped) do
+            if CurrentTower ~= "None" then
+                local UnequipDone = false
+                repeat
+                    local ok = pcall(function()
+                        remote:FireServer("Inventory", "Unequip", "Tower", CurrentTower)
+                        task.wait(0.3)
+                    end)
+                    if ok then UnequipDone = true else task.wait(0.2) end
+                until UnequipDone
+            end
         end
-    end
 
-    task.wait(0.5)
+        task.wait(0.5)
 
-    for _, TowerName in ipairs(towers) do
-        if TowerName and TowerName ~= "" then
-            local EquipSuccess = false
-            repeat
-                local ok = pcall(function()
-                    remote:FireServer("Inventory", "Equip", "Tower", TowerName)
-                    Logger:Log("Equipped tower: " .. TowerName)
-                    task.wait(0.3)
-                end)
-                if ok then EquipSuccess = true else task.wait(0.2) end
-            until EquipSuccess
+        for _, TowerName in ipairs(towers) do
+            if TowerName and TowerName ~= "" then
+                local EquipSuccess = false
+                repeat
+                    local ok = pcall(function()
+                        remote:FireServer("Inventory", "Equip", "Tower", TowerName)
+                        Logger:Log("Equipped tower: " .. TowerName)
+                        task.wait(0.3)
+                    end)
+                    if ok then EquipSuccess = true else task.wait(0.2) end
+                until EquipSuccess
+            end
         end
-    end
 
-    task.wait(0.5)
-    return true
+        task.wait(0.5)
+    end)
+
+    IsCurrentlyLoading = false
+    IsEquippingLoadout = false
+    self.IsEquippingLoadout = false
+    self.LoadoutPending = false
+    LastLoadTime = os.clock()
+
+    return success
 end
 
 -- ingame
@@ -3884,6 +3904,10 @@ if GameState == "LOBBY" and Globals.AutoRejoin and isfile("ADS_LastStrat.lua") t
 end
 
 if GameState == "GAME" and Globals.AutoRejoin and isfile("ADS_LastStrat.lua") then
+    local stratContent = pcall(readfile, "ADS_LastStrat.lua") and readfile("ADS_LastStrat.lua") or ""
+    if stratContent:find(":Loadout%(") then
+        TDS.LoadoutPending = true
+    end
     task.spawn(function()
         task.wait(2)
         TDS:RunStrategy()
@@ -3930,7 +3954,7 @@ local function StartGatlify()
         while Globals.Gatlify do
             if GameState == "GAME" then
                 if not GatlifyExecuted then
-                    repeat task.wait(0.5) until not IsCurrentlyLoading and (os.clock() - LastLoadTime >= 5)
+                    repeat task.wait(0.5) until not IsCurrentlyLoading and not IsEquippingLoadout and not (TDS and TDS.LoadoutPending) and (os.clock() - LastLoadTime >= 5)
                     if not Globals.Gatlify then break end
                     if not GatlifyExecuted then
                         IsCurrentlyLoading = true
@@ -3957,6 +3981,12 @@ local function StartAutoPremium()
 
     task.spawn(function()
         if GameState == "GAME" then
+            repeat task.wait(0.5) until not IsCurrentlyLoading and not IsEquippingLoadout and not (TDS and TDS.LoadoutPending) and (os.clock() - LastLoadTime >= 5)
+            if not Globals.AutoPremium or PremiumLoaded then
+                AutoPremiumRunning = false
+                return
+            end
+
             Window:Notify({
                 Title = "ADS",
                 Desc = "Loading Key System...",
@@ -4659,6 +4689,7 @@ local function StartMedicChain()
 end
 
 task.spawn(function()
+    task.wait(2)
     while true do
         if Globals.AutoPickups and not AutoPickupsRunning then
             StartAutoPickups()
