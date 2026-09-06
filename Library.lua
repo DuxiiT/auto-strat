@@ -250,6 +250,7 @@ local DefaultSettings = {
     SendWebhook = false,
     NoRecoil = false,
     SellFarmsWave = 1,
+    TowerSnapper = false,
     WebhookURL = "",
     PickupMethod = "Pathfinding",
     StreamerMode = false,
@@ -265,6 +266,18 @@ local DefaultSettings = {
     AutoProgressionStatus = "Status: waiting... | Mode: None",
     AutoMedic = false,
     AutoTrials = false
+}
+
+local TowerSnapper = {
+    Enabled = true,
+    MaxRadius = 16,
+    CoarseStep = 0.35,
+    FineStep = 0.08,
+    LastInput = nil,
+    LastSnapped = nil,
+    LastHit = nil,
+    LastValid = false,
+    TowerCount = 0
 }
 
 local TimeScaleValues = {0.5, 1, 1.5, 2}
@@ -1234,6 +1247,255 @@ task.spawn(function()
     end
 end)
 
+local function InvalidateSnapCache()
+    TowerSnapper.LastInput = nil
+    TowerSnapper.LastSnapped = nil
+    TowerSnapper.LastHit = nil
+    TowerSnapper.LastValid = false
+end
+
+task.spawn(function()
+    local TowersFolder = workspace:WaitForChild("Towers", 30)
+    if TowersFolder then
+        TowersFolder.ChildAdded:Connect(InvalidateSnapCache)
+        TowersFolder.ChildRemoved:Connect(InvalidateSnapCache)
+    end
+end)
+
+local function FindNearestValidPlacement(CheckCollisionsOriginal, TowerName, TargetPos, Team, MaxRadius)
+    local CurrentTowerCount = #workspace.Towers:GetChildren()
+    if CurrentTowerCount ~= TowerSnapper.TowerCount then
+        TowerSnapper.TowerCount = CurrentTowerCount
+        InvalidateSnapCache()
+    end
+
+    local IsValid, HitResult = CheckCollisionsOriginal(TowerName, TargetPos, Team)
+    if IsValid then
+        TowerSnapper.LastInput = TargetPos
+        TowerSnapper.LastSnapped = TargetPos
+        TowerSnapper.LastHit = HitResult
+        TowerSnapper.LastValid = true
+        return TargetPos, HitResult, false
+    end
+
+    if TowerSnapper.LastInput and (TargetPos - TowerSnapper.LastInput).Magnitude < 0.02 then
+        if TowerSnapper.LastValid and TowerSnapper.LastSnapped then
+            return TowerSnapper.LastSnapped, TowerSnapper.LastHit, true
+        end
+    end
+
+    MaxRadius = MaxRadius or TowerSnapper.MaxRadius
+    local CoarseStep = TowerSnapper.CoarseStep
+    local BestCoarseDist = math.huge
+    local BestAngle = 0
+    local BestRadius = 0
+
+    for Radius = CoarseStep, MaxRadius, CoarseStep do
+        local Count = math.max(12, math.floor(2 * math.pi * Radius / CoarseStep))
+        local AngleStep = (2 * math.pi) / Count
+        local FoundInRing = false
+
+        for Index = 0, Count - 1 do
+            local Theta = Index * AngleStep
+            local TestPos = TargetPos + Vector3.new(math.cos(Theta) * Radius, 0, math.sin(Theta) * Radius)
+            local Valid, Res = CheckCollisionsOriginal(TowerName, TestPos, Team)
+            if Valid then
+                local ActualPos = (typeof(Res) == "RaycastResult") and Res.Position or TestPos
+                local Dist = (Vector3.new(ActualPos.X, 0, ActualPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
+                if Dist < BestCoarseDist then
+                    BestCoarseDist = Dist
+                    BestAngle = Theta
+                    BestRadius = Radius
+                    FoundInRing = true
+                end
+            end
+        end
+
+        if FoundInRing and BestCoarseDist <= Radius + (CoarseStep * 0.5) then
+            break
+        end
+    end
+
+    if BestCoarseDist == math.huge then
+        TowerSnapper.LastInput = TargetPos
+        TowerSnapper.LastValid = false
+        TowerSnapper.LastSnapped = nil
+        TowerSnapper.LastHit = nil
+        return TargetPos, HitResult, false
+    end
+
+    local FineBestPos = nil
+    local FineBestDist = math.huge
+    local FineBestRes = nil
+
+    local RadiusMin = math.max(0.04, BestRadius - CoarseStep)
+    local RadiusMax = BestRadius + (CoarseStep * 0.5)
+    local RadiusStep = TowerSnapper.FineStep
+    local AngleSpan = math.atan2(CoarseStep, BestRadius) * 1.6
+
+    for Radius = RadiusMin, RadiusMax, RadiusStep do
+        local AngleSteps = math.max(6, math.floor(Radius * AngleSpan / RadiusStep))
+        for Index = -AngleSteps, AngleSteps do
+            local Theta = BestAngle + (Index * (AngleSpan / AngleSteps))
+            local TestPos = TargetPos + Vector3.new(math.cos(Theta) * Radius, 0, math.sin(Theta) * Radius)
+            local Valid, Res = CheckCollisionsOriginal(TowerName, TestPos, Team)
+            if Valid then
+                local ActualPos = (typeof(Res) == "RaycastResult") and Res.Position or TestPos
+                local Dist = (Vector3.new(ActualPos.X, 0, ActualPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
+                if Dist < FineBestDist then
+                    FineBestDist = Dist
+                    FineBestPos = ActualPos
+                    FineBestRes = Res
+                end
+            end
+        end
+        if FineBestPos and FineBestDist <= Radius + 0.04 then
+            break
+        end
+    end
+
+    local FinalPos = FineBestPos or TargetPos
+    local FinalRes = FineBestRes or HitResult
+
+    TowerSnapper.LastInput = TargetPos
+    TowerSnapper.LastSnapped = FinalPos
+    TowerSnapper.LastHit = FinalRes
+    TowerSnapper.LastValid = (FineBestPos ~= nil)
+
+    return FinalPos, FinalRes, (FineBestPos ~= nil)
+end
+
+local function HookPlacementSystem()
+    local Success, Err = pcall(function()
+        local NewPlacementController = require(ReplicatedStorage.Client.Controllers.Game.NewPlacementController)
+        local SharedGameFunctions = require(ReplicatedStorage.Shared.Modules.SharedGameFunctions)
+        local Scheduler = require(ReplicatedStorage.Shared.Modules.Scheduler)
+
+        local OrigCheckTowerCollisions = SharedGameFunctions.CheckTowerCollisions
+
+        local ProxyShared = setmetatable({}, {
+            __index = function(_, Key)
+                if Key == "CheckTowerCollisions" then
+                    return function(TowerName, Pos, Team, ...)
+                        if not TowerSnapper.Enabled then
+                            return OrigCheckTowerCollisions(TowerName, Pos, Team, ...)
+                        end
+
+                        local SnappedPos, HitRes, IsSnapped = FindNearestValidPlacement(
+                            OrigCheckTowerCollisions,
+                            TowerName,
+                            Pos,
+                            Team
+                        )
+
+                        if IsSnapped and HitRes then
+                            return true, HitRes
+                        end
+
+                        return OrigCheckTowerCollisions(TowerName, Pos, Team, ...)
+                    end
+                end
+                return SharedGameFunctions[Key]
+            end,
+            __newindex = function(_, Key, Val)
+                SharedGameFunctions[Key] = Val
+            end
+        })
+
+        if getupvalues and setupvalue then
+            local Upvals = getupvalues(NewPlacementController.Start)
+            for Idx, Val in pairs(Upvals) do
+                if Val == SharedGameFunctions then
+                    setupvalue(NewPlacementController.Start, Idx, ProxyShared)
+                    break
+                end
+            end
+        end
+
+        if NewPlacementController.Place and NewPlacementController.Place.Connect then
+            NewPlacementController.Place:Connect(function()
+                InvalidateSnapCache()
+            end)
+        end
+
+        local OrigAdd = Scheduler.add
+        Scheduler.add = function(Name, Signal, Callback)
+            if Name == "TowerPlacement" and type(Callback) == "function" then
+                local WrappedCallback = function(Dt)
+                    if not TowerSnapper.Enabled then
+                        return Callback(Dt)
+                    end
+
+                    local Upvals = getupvalues(Callback)
+                    local Mouse = Upvals[1]
+                    local RaycastParams = Upvals[2]
+                    local SharedGame = Upvals[3]
+                    local TowerData = Upvals[4]
+                    local Team = Upvals[5]
+                    local UpgradesStore = Upvals[7]
+                    local Model = Upvals[8]
+                    local SpringPos = Upvals[11]
+                    local RotLerp = Upvals[12]
+                    local TargetRot = Upvals[13]
+                    local AnimController = Upvals[14]
+                    local TowerClass = Upvals[15]
+                    local EnumModule = Upvals[16]
+                    local SpringNormal = Upvals[17]
+                    local QuaternionModule = Upvals[18]
+
+                    local Ray = workspace:Raycast(Mouse.UnitRay.Origin, Mouse.UnitRay.Direction * 1000, RaycastParams)
+                    if Ray then
+                        local IsValid, HitRes = SharedGame.CheckTowerCollisions(TowerData.Name, Ray.Position, Team)
+
+                        if Upvals[6] ~= IsValid then
+                            setupvalue(Callback, 6, IsValid)
+                            UpgradesStore.updateValid(Model, IsValid)
+                        end
+
+                        local FinalTargetPos = Ray.Position
+                        local FinalTargetNormal = Ray.Normal
+                        if IsValid and HitRes then
+                            local HitPos = (typeof(HitRes) == "RaycastResult") and HitRes.Position or HitRes
+                            setupvalue(Callback, 9, HitPos)
+                            FinalTargetPos = HitPos
+                            if typeof(HitRes) == "RaycastResult" and HitRes.Normal then
+                                FinalTargetNormal = HitRes.Normal
+                            end
+                        end
+
+                        if Upvals[10] then
+                            setupvalue(Callback, 10, false)
+                            SpringPos.init(FinalTargetPos, Vector3.new(0, 0, 0))
+                        else
+                            SpringPos.t = FinalTargetPos
+                        end
+
+                        local DtAlpha = math.min(Dt * 10, 1)
+                        RotLerp = math.lerp(RotLerp, TargetRot, DtAlpha)
+                        setupvalue(Callback, 12, RotLerp)
+
+                        local ModelCF = CFrame.new(SpringPos.p) * CFrame.Angles(0, math.rad(RotLerp), 0)
+
+                        if AnimController and TowerClass ~= EnumModule.TowerType.Flying and SpringNormal and QuaternionModule then
+                            SpringNormal.t = ModelCF.Position
+                            local Tilt = QuaternionModule(FinalTargetNormal, FinalTargetNormal + (-0.01 * SpringNormal.v)) + SpringNormal.p
+                            ModelCF = ModelCF * (Tilt - Tilt.Position)
+                        end
+
+                        Model:PivotTo(CFrame.new(ModelCF.X, FinalTargetPos.Y, ModelCF.Z) * CFrame.Angles(ModelCF:toEulerAnglesXYZ()))
+                    end
+                end
+                return OrigAdd(Name, Signal, WrappedCallback)
+            end
+            return OrigAdd(Name, Signal, Callback)
+        end
+    end)
+end
+
+if GameState == "GAME" then
+    HookPlacementSystem()
+end
+
 -- // ui
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
@@ -1608,6 +1870,16 @@ local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-cli
     
     Interactive:Section({Title = "Tower Controls"})
     
+    Interactive:Toggle({
+        Title = "Tower Snapper",
+        Desc = "Automatically snaps tower preview to the nearest valid position when hovering invalid spots",
+        Value = Globals.TowerSnapper,
+        Callback = function(v)
+            TowerSnapper.Enabled = v
+            SetSetting("TowerSnapper", v)
+        end
+    })
+
     local TowerDropdown = Interactive:Dropdown({
         Title = "Tower:",
         List = CurrentEquippedTowers,
