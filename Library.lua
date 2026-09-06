@@ -208,7 +208,7 @@ local SelectedTower = nil
 local StackSphere = nil
 
 local AutoMedicRunning = false
-local AutoTrialsRunning = false
+local _AutoTrialsRunning = false
 
 local AllModifiers = {
     "HiddenEnemies", "Glass", "ExplodingEnemies", "Limitation", 
@@ -2304,7 +2304,8 @@ local Progression = Window:Tab({Title = "Progression", Icon = "settings"}) do
         Title = "Test Webhook",
         Callback = function()
             if not Globals.ProgressionWebhookURL or Globals.ProgressionWebhookURL == "" then
-                return Window:Notify({Title = "Error", Desc = "Webhook URL is empty!", Time = 3, Type = "error"})
+                Window:Notify({Title = "Error", Desc = "Webhook URL is empty!", Time = 3, Type = "error"})
+                return
             end
 
             local success, response = pcall(function()
@@ -2357,7 +2358,7 @@ end
 
 Window:Line()
 
-Logger = Window:Tab({Title = "Logger", Icon = "terminal"}) do
+Logger = Window:Tab({Title = "Logger", Icon = "terminal"}); do
     Logger = Logger:CreateLogger({
         Title = "STRATEGY LOGGER:",
         Size = UDim2.new(0, 330, 0, 300)
@@ -2484,7 +2485,8 @@ local Settings = Window:Tab({Title = "Settings", Icon = "settings"}) do
         Title = "Test Webhook",
         Callback = function()
             if not Globals.WebhookURL or Globals.WebhookURL == "" then
-                return Window:Notify({Title = "Error", Desc = "Webhook URL is empty!", Time = 3, Type = "error"})
+                Window:Notify({Title = "Error", Desc = "Webhook URL is empty!", Time = 3, Type = "error"})
+                return
             end
 
             local success, response = pcall(function()
@@ -2771,10 +2773,9 @@ local function HandlePostMatch(skipRejoin)
 
     if not UiRoot then 
         if not skipRejoin then
-            return RejoinMatch() 
-        else
-            return
+            RejoinMatch() 
         end
+        return
     end
     if not Globals.AutoRejoin and not Globals.AutoRestart then return end
 
@@ -3047,7 +3048,7 @@ end
 -- // timescale logic
 local function SetGameTimescale(TargetVal)
     if GameState ~= "GAME" then 
-        return false 
+        return 
     end
 
     local SpeedList = {0, 0.5, 1, 1.5, 2}
@@ -3091,7 +3092,7 @@ end
 
 local function UnlockSpeedTickets()
     if GameState ~= "GAME" then 
-        return false 
+        return 
     end
 
     if LocalPlayer.TimescaleTickets.Value >= 1 then
@@ -3397,7 +3398,6 @@ function TDS:Mode(difficulty, code)
     if MatchMaking then
         local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
         local success = false
-        local res
         repeat
             local ok, result = pcall(function()
                 local mode = TDS.MatchmakingMap[difficulty]
@@ -3436,7 +3436,6 @@ function TDS:Mode(difficulty, code)
 
             if ok and CheckResOk(result) then
                 success = true
-                res = result
             else
                 task.wait(0.5) 
             end
@@ -3619,6 +3618,7 @@ function TDS:Ready()
         return false 
     end
     MatchReadyUp()
+    return true
 end
 
 function TDS:GetWave()
@@ -4266,7 +4266,6 @@ local function StartAntiLag()
     AntiLagRunning = true
 
     local settings = settings().Rendering
-    local OriginalQuality = settings.QualityLevel
     settings.QualityLevel = Enum.QualityLevel.Level01
 
     task.spawn(function()
@@ -4376,6 +4375,7 @@ local function StartAutoDjBooth()
 
     task.spawn(function()
         while Globals.AutoDJ do
+            local DJ = nil
             local TowersFolder = workspace:FindFirstChild("Towers")
 
             if TowersFolder then
@@ -4624,12 +4624,8 @@ local function StartAutoMilitary()
 end
 
 local function StartSellFarm()
-    if SellFarmsRunning or not Globals.SellFarms then return end
+    if SellFarmsRunning or not Globals.SellFarms or GameState ~= "GAME" then return end
     SellFarmsRunning = true
-
-    if GameState ~= "GAME" then 
-        return false 
-    end
 
     task.spawn(function()
         while Globals.SellFarms do
