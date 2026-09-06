@@ -250,11 +250,12 @@ local DefaultSettings = {
     SendWebhook = false,
     NoRecoil = false,
     SellFarmsWave = 1,
-    TowerSnapper = false,
+    Snapper = false,
     WebhookURL = "",
     PickupMethod = "Pathfinding",
     StreamerMode = false,
     HideUsername = false,
+    BuffOverlay = false,
     StreamerName = "",
     tagName = "None",
     Modifiers = {},
@@ -269,15 +270,44 @@ local DefaultSettings = {
 }
 
 local TowerSnapper = {
-    Enabled = true,
+    Enabled = Globals.Snapper ~= nil and Globals.Snapper or true,
     MaxRadius = 16,
     CoarseStep = 0.35,
     FineStep = 0.08,
+    SpacingOffset = 0.04,
     LastInput = nil,
     LastSnapped = nil,
     LastHit = nil,
     LastValid = false,
     TowerCount = 0
+}
+
+local BuffOverlay = {
+    Enabled = true,
+    AuraVisuals = {},
+    PulseClock = 0,
+    BasePreviewRange = nil,
+    CurrentExpandedRange = nil,
+    SupportDefinitions = {
+        ["DJ Booth"] = {
+            Tag = "DJ",
+            Color = Color3.fromRGB(255, 43, 79),
+            GlowColor = Color3.fromRGB(255, 90, 120),
+            FallbackRanges = { [0] = 12, [1] = 15, [2] = 15, [3] = 15, [4] = 16.5, [5] = 18 }
+        },
+        ["Commander"] = {
+            Tag = "CMD",
+            Color = Color3.fromRGB(0, 210, 255),
+            GlowColor = Color3.fromRGB(120, 235, 255),
+            FallbackRanges = { [0] = 10, [1] = 10, [2] = 13, [3] = 15, [4] = 17 }
+        },
+        ["Medic"] = {
+            Tag = "MED",
+            Color = Color3.fromRGB(0, 255, 163),
+            GlowColor = Color3.fromRGB(120, 255, 210),
+            FallbackRanges = { [0] = 12, [1] = 12, [2] = 14, [3] = 15, [4] = 18, [5] = 20 }
+        }
+    }
 }
 
 local TimeScaleValues = {0.5, 1, 1.5, 2}
@@ -1253,7 +1283,6 @@ local function InvalidateSnapCache()
     TowerSnapper.LastHit = nil
     TowerSnapper.LastValid = false
 end
-
 task.spawn(function()
     local TowersFolder = workspace:WaitForChild("Towers", 30)
     if TowersFolder then
@@ -1262,6 +1291,91 @@ task.spawn(function()
     end
 end)
 
+local function GetTwoCircleTangents(PosA, RadiusA, PosB, RadiusB, RadiusNew)
+    local CenterDist = (Vector3.new(PosB.X, 0, PosB.Z) - Vector3.new(PosA.X, 0, PosA.Z)).Magnitude
+    local DistA = RadiusA + RadiusNew + TowerSnapper.SpacingOffset
+    local DistB = RadiusB + RadiusNew + TowerSnapper.SpacingOffset
+    if CenterDist > (DistA + DistB) or CenterDist < math.abs(DistA - DistB) or CenterDist == 0 then
+        return nil
+    end
+    local SideA = (DistA^2 - DistB^2 + CenterDist^2) / (2 * CenterDist)
+    local HeightSq = DistA^2 - SideA^2
+    if HeightSq < 0 then return nil end
+    local Height = math.sqrt(HeightSq)
+    local DirX = (PosB.X - PosA.X) / CenterDist
+    local DirZ = (PosB.Z - PosA.Z) / CenterDist
+    local MidX = PosA.X + (DirX * SideA)
+    local MidZ = PosA.Z + (DirZ * SideA)
+    local NormX = -DirZ
+    local NormZ = DirX
+    local Pocket1 = Vector3.new(MidX + (NormX * Height), PosA.Y, MidZ + (NormZ * Height))
+    local Pocket2 = Vector3.new(MidX - (NormX * Height), PosA.Y, MidZ - (NormZ * Height))
+    return Pocket1, Pocket2
+end
+
+local function FindHoneycombCandidates(TowerName, TargetPos)
+    local TowersFolder = workspace:FindFirstChild("Towers")
+    if not TowersFolder then return {} end
+    local Asset = require(ReplicatedStorage.Shared.Modules.Asset)
+    local SharedConstants = require(ReplicatedStorage.Shared.Modules.SharedGameConstants)
+    local TowerAsset = Asset("Troops", TowerName)
+    local DefaultBoundary = SharedConstants.DEFAULT_BOUNDARY_SIZE or 1.5
+    local NewRadius = (TowerAsset and TowerAsset.Properties and TowerAsset.Properties.BoundarySize) or DefaultBoundary
+    local NearbyTowers = {}
+
+    for _, TowerInstance in ipairs(TowersFolder:GetChildren()) do
+        local Replicator = TowerInstance:FindFirstChild("TowerReplicator")
+        if Replicator then
+            local OtherName = Replicator:GetAttribute("Name") or TowerInstance.Name
+            local OtherAsset = Asset("Troops", OtherName)
+            local OtherRadius = (OtherAsset and OtherAsset.Properties and OtherAsset.Properties.BoundarySize) or DefaultBoundary
+            local TowerPos = TowerInstance:GetPivot().Position
+            local Dist = (Vector3.new(TowerPos.X, 0, TowerPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
+            if Dist <= (OtherRadius + NewRadius + 12) then
+                table.insert(NearbyTowers, {
+                    Position = TowerPos,
+                    Radius = OtherRadius,
+                    Distance = Dist
+                })
+            end
+        end
+    end
+
+    if #NearbyTowers == 0 then return {} end
+    table.sort(NearbyTowers, function(A, B) return A.Distance < B.Distance end)
+
+    local Candidates = {}
+
+    if #NearbyTowers >= 2 then
+        for FirstIdx = 1, math.min(#NearbyTowers - 1, 3) do
+            for SecondIdx = FirstIdx + 1, math.min(#NearbyTowers, 4) do
+                local TowerA = NearbyTowers[FirstIdx]
+                local TowerB = NearbyTowers[SecondIdx]
+                local P1, P2 = GetTwoCircleTangents(TowerA.Position, TowerA.Radius, TowerB.Position, TowerB.Radius, NewRadius)
+                if P1 then table.insert(Candidates, P1) end
+                if P2 then table.insert(Candidates, P2) end
+            end
+        end
+    end
+
+    for Index = 1, math.min(#NearbyTowers, 3) do
+        local Tower = NearbyTowers[Index]
+        local Dir = (Vector3.new(TargetPos.X, 0, TargetPos.Z) - Vector3.new(Tower.Position.X, 0, Tower.Position.Z))
+        local TangentDist = Tower.Radius + NewRadius + TowerSnapper.SpacingOffset
+
+        if Dir.Magnitude > 0.01 then
+            table.insert(Candidates, Tower.Position + (Dir.Unit * TangentDist))
+        end
+
+        for AngleIdx = 0, 15 do
+            local Angle = (math.pi * 2 / 16) * AngleIdx
+            table.insert(Candidates, Tower.Position + Vector3.new(math.cos(Angle) * TangentDist, 0, math.sin(Angle) * TangentDist))
+        end
+    end
+
+    return Candidates
+end
+
 local function FindNearestValidPlacement(CheckCollisionsOriginal, TowerName, TargetPos, Team, MaxRadius)
     local CurrentTowerCount = #workspace.Towers:GetChildren()
     if CurrentTowerCount ~= TowerSnapper.TowerCount then
@@ -1269,18 +1383,36 @@ local function FindNearestValidPlacement(CheckCollisionsOriginal, TowerName, Tar
         InvalidateSnapCache()
     end
 
-    local IsValid, HitResult = CheckCollisionsOriginal(TowerName, TargetPos, Team)
-    if IsValid then
+    local IsValidDirect, DirectHit = CheckCollisionsOriginal(TowerName, TargetPos, Team)
+    if IsValidDirect then
         TowerSnapper.LastInput = TargetPos
         TowerSnapper.LastSnapped = TargetPos
-        TowerSnapper.LastHit = HitResult
+        TowerSnapper.LastHit = DirectHit
         TowerSnapper.LastValid = true
-        return TargetPos, HitResult, false
+        return TargetPos, DirectHit, false
     end
 
     if TowerSnapper.LastInput and (TargetPos - TowerSnapper.LastInput).Magnitude < 0.02 then
         if TowerSnapper.LastValid and TowerSnapper.LastSnapped then
             return TowerSnapper.LastSnapped, TowerSnapper.LastHit, true
+        end
+    end
+
+    local BestPos = nil
+    local BestDist = math.huge
+    local BestHit = nil
+
+    local HoneycombCandidates = FindHoneycombCandidates(TowerName, TargetPos)
+    for _, CandPos in ipairs(HoneycombCandidates) do
+        local IsCandValid, CandHit = CheckCollisionsOriginal(TowerName, CandPos, Team)
+        if IsCandValid and CandHit then
+            local ActualPos = (typeof(CandHit) == "RaycastResult") and CandHit.Position or CandPos
+            local CandDist = (Vector3.new(ActualPos.X, 0, ActualPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
+            if CandDist < BestDist then
+                BestDist = CandDist
+                BestPos = ActualPos
+                BestHit = CandHit
+            end
         end
     end
 
@@ -1291,6 +1423,10 @@ local function FindNearestValidPlacement(CheckCollisionsOriginal, TowerName, Tar
     local BestRadius = 0
 
     for Radius = CoarseStep, MaxRadius, CoarseStep do
+        if Radius >= BestDist then
+            break
+        end
+
         local Count = math.max(12, math.floor(2 * math.pi * Radius / CoarseStep))
         local AngleStep = (2 * math.pi) / Count
         local FoundInRing = false
@@ -1299,7 +1435,7 @@ local function FindNearestValidPlacement(CheckCollisionsOriginal, TowerName, Tar
             local Theta = Index * AngleStep
             local TestPos = TargetPos + Vector3.new(math.cos(Theta) * Radius, 0, math.sin(Theta) * Radius)
             local Valid, Res = CheckCollisionsOriginal(TowerName, TestPos, Team)
-            if Valid then
+            if Valid and Res then
                 local ActualPos = (typeof(Res) == "RaycastResult") and Res.Position or TestPos
                 local Dist = (Vector3.new(ActualPos.X, 0, ActualPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
                 if Dist < BestCoarseDist then
@@ -1316,53 +1452,53 @@ local function FindNearestValidPlacement(CheckCollisionsOriginal, TowerName, Tar
         end
     end
 
-    if BestCoarseDist == math.huge then
-        TowerSnapper.LastInput = TargetPos
-        TowerSnapper.LastValid = false
-        TowerSnapper.LastSnapped = nil
-        TowerSnapper.LastHit = nil
-        return TargetPos, HitResult, false
-    end
+    if BestCoarseDist < BestDist then
+        local FineBestPos = nil
+        local FineBestDist = math.huge
+        local FineBestRes = nil
+        local RadiusMin = math.max(0.04, BestRadius - CoarseStep)
+        local RadiusMax = BestRadius + (CoarseStep * 0.5)
+        local RadiusStep = TowerSnapper.FineStep
+        local AngleSpan = math.atan2(CoarseStep, BestRadius) * 1.6
 
-    local FineBestPos = nil
-    local FineBestDist = math.huge
-    local FineBestRes = nil
-
-    local RadiusMin = math.max(0.04, BestRadius - CoarseStep)
-    local RadiusMax = BestRadius + (CoarseStep * 0.5)
-    local RadiusStep = TowerSnapper.FineStep
-    local AngleSpan = math.atan2(CoarseStep, BestRadius) * 1.6
-
-    for Radius = RadiusMin, RadiusMax, RadiusStep do
-        local AngleSteps = math.max(6, math.floor(Radius * AngleSpan / RadiusStep))
-        for Index = -AngleSteps, AngleSteps do
-            local Theta = BestAngle + (Index * (AngleSpan / AngleSteps))
-            local TestPos = TargetPos + Vector3.new(math.cos(Theta) * Radius, 0, math.sin(Theta) * Radius)
-            local Valid, Res = CheckCollisionsOriginal(TowerName, TestPos, Team)
-            if Valid then
-                local ActualPos = (typeof(Res) == "RaycastResult") and Res.Position or TestPos
-                local Dist = (Vector3.new(ActualPos.X, 0, ActualPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
-                if Dist < FineBestDist then
-                    FineBestDist = Dist
-                    FineBestPos = ActualPos
-                    FineBestRes = Res
+        for Radius = RadiusMin, RadiusMax, RadiusStep do
+            local AngleSteps = math.max(6, math.floor(Radius * AngleSpan / RadiusStep))
+            for Index = -AngleSteps, AngleSteps do
+                local Theta = BestAngle + (Index * (AngleSpan / AngleSteps))
+                local TestPos = TargetPos + Vector3.new(math.cos(Theta) * Radius, 0, math.sin(Theta) * Radius)
+                local Valid, Res = CheckCollisionsOriginal(TowerName, TestPos, Team)
+                if Valid and Res then
+                    local ActualPos = (typeof(Res) == "RaycastResult") and Res.Position or TestPos
+                    local Dist = (Vector3.new(ActualPos.X, 0, ActualPos.Z) - Vector3.new(TargetPos.X, 0, TargetPos.Z)).Magnitude
+                    if Dist < FineBestDist then
+                        FineBestDist = Dist
+                        FineBestPos = ActualPos
+                        FineBestRes = Res
+                    end
                 end
             end
+            if FineBestPos and FineBestDist <= Radius + 0.04 then
+                break
+            end
         end
-        if FineBestPos and FineBestDist <= Radius + 0.04 then
-            break
+
+        if FineBestPos and FineBestDist < BestDist then
+            BestDist = FineBestDist
+            BestPos = FineBestPos
+            BestHit = FineBestRes
         end
     end
 
-    local FinalPos = FineBestPos or TargetPos
-    local FinalRes = FineBestRes or HitResult
+    local FinalPos = BestPos or TargetPos
+    local FinalRes = BestHit or DirectHit
+    local IsSnapped = (BestPos ~= nil)
 
     TowerSnapper.LastInput = TargetPos
     TowerSnapper.LastSnapped = FinalPos
     TowerSnapper.LastHit = FinalRes
-    TowerSnapper.LastValid = (FineBestPos ~= nil)
+    TowerSnapper.LastValid = IsSnapped
 
-    return FinalPos, FinalRes, (FineBestPos ~= nil)
+    return FinalPos, FinalRes, IsSnapped
 end
 
 local function HookPlacementSystem()
@@ -1370,9 +1506,7 @@ local function HookPlacementSystem()
         local NewPlacementController = require(ReplicatedStorage.Client.Controllers.Game.NewPlacementController)
         local SharedGameFunctions = require(ReplicatedStorage.Shared.Modules.SharedGameFunctions)
         local Scheduler = require(ReplicatedStorage.Shared.Modules.Scheduler)
-
         local OrigCheckTowerCollisions = SharedGameFunctions.CheckTowerCollisions
-
         local ProxyShared = setmetatable({}, {
             __index = function(_, Key)
                 if Key == "CheckTowerCollisions" then
@@ -1380,18 +1514,15 @@ local function HookPlacementSystem()
                         if not TowerSnapper.Enabled then
                             return OrigCheckTowerCollisions(TowerName, Pos, Team, ...)
                         end
-
                         local SnappedPos, HitRes, IsSnapped = FindNearestValidPlacement(
                             OrigCheckTowerCollisions,
                             TowerName,
                             Pos,
                             Team
                         )
-
                         if IsSnapped and HitRes then
                             return true, HitRes
                         end
-
                         return OrigCheckTowerCollisions(TowerName, Pos, Team, ...)
                     end
                 end
@@ -1401,7 +1532,6 @@ local function HookPlacementSystem()
                 SharedGameFunctions[Key] = Val
             end
         })
-
         if getupvalues and setupvalue then
             local Upvals = getupvalues(NewPlacementController.Start)
             for Idx, Val in pairs(Upvals) do
@@ -1411,13 +1541,11 @@ local function HookPlacementSystem()
                 end
             end
         end
-
         if NewPlacementController.Place and NewPlacementController.Place.Connect then
             NewPlacementController.Place:Connect(function()
                 InvalidateSnapCache()
             end)
         end
-
         local OrigAdd = Scheduler.add
         Scheduler.add = function(Name, Signal, Callback)
             if Name == "TowerPlacement" and type(Callback) == "function" then
@@ -1425,7 +1553,6 @@ local function HookPlacementSystem()
                     if not TowerSnapper.Enabled then
                         return Callback(Dt)
                     end
-
                     local Upvals = getupvalues(Callback)
                     local Mouse = Upvals[1]
                     local RaycastParams = Upvals[2]
@@ -1442,16 +1569,13 @@ local function HookPlacementSystem()
                     local EnumModule = Upvals[16]
                     local SpringNormal = Upvals[17]
                     local QuaternionModule = Upvals[18]
-
                     local Ray = workspace:Raycast(Mouse.UnitRay.Origin, Mouse.UnitRay.Direction * 1000, RaycastParams)
                     if Ray then
                         local IsValid, HitRes = SharedGame.CheckTowerCollisions(TowerData.Name, Ray.Position, Team)
-
                         if Upvals[6] ~= IsValid then
                             setupvalue(Callback, 6, IsValid)
                             UpgradesStore.updateValid(Model, IsValid)
                         end
-
                         local FinalTargetPos = Ray.Position
                         local FinalTargetNormal = Ray.Normal
                         if IsValid and HitRes then
@@ -1462,26 +1586,21 @@ local function HookPlacementSystem()
                                 FinalTargetNormal = HitRes.Normal
                             end
                         end
-
                         if Upvals[10] then
                             setupvalue(Callback, 10, false)
                             SpringPos.init(FinalTargetPos, Vector3.new(0, 0, 0))
                         else
                             SpringPos.t = FinalTargetPos
                         end
-
                         local DtAlpha = math.min(Dt * 10, 1)
                         RotLerp = math.lerp(RotLerp, TargetRot, DtAlpha)
                         setupvalue(Callback, 12, RotLerp)
-
                         local ModelCF = CFrame.new(SpringPos.p) * CFrame.Angles(0, math.rad(RotLerp), 0)
-
                         if AnimController and TowerClass ~= EnumModule.TowerType.Flying and SpringNormal and QuaternionModule then
                             SpringNormal.t = ModelCF.Position
                             local Tilt = QuaternionModule(FinalTargetNormal, FinalTargetNormal + (-0.01 * SpringNormal.v)) + SpringNormal.p
                             ModelCF = ModelCF * (Tilt - Tilt.Position)
                         end
-
                         Model:PivotTo(CFrame.new(ModelCF.X, FinalTargetPos.Y, ModelCF.Z) * CFrame.Angles(ModelCF:toEulerAnglesXYZ()))
                     end
                 end
@@ -1491,6 +1610,198 @@ local function HookPlacementSystem()
         end
     end)
 end
+
+local function GetDJRangeBuffPercent(UpgradeLevel, TrackName)
+    TrackName = TrackName or "Purple"
+    if TrackName == "Purple" then
+        local PurpleTable = { [0] = 12.5, [1] = 12.5, [2] = 15, [3] = 17.5, [4] = 22.5, [5] = 25 }
+        return PurpleTable[UpgradeLevel] or 12.5
+    elseif TrackName == "Green" or TrackName == "Red" then
+        if UpgradeLevel >= 5 then
+            return 10
+        end
+    end
+    return 0
+end
+
+local function ClearBuffVisuals()
+    for _, VisualRecord in pairs(BuffOverlay.AuraVisuals) do
+        if VisualRecord.OutlinePart and VisualRecord.OutlinePart.Parent then
+            VisualRecord.OutlinePart:Destroy()
+        end
+    end
+    table.clear(BuffOverlay.AuraVisuals)
+
+    if BuffOverlay.BasePreviewRange then
+        pcall(function()
+            local UpgradesStore = require(ReplicatedStorage.Client.Interfaces.Stores.Game.UpgradesStore)
+            UpgradesStore.updateZone({ range = BuffOverlay.BasePreviewRange })
+        end)
+        BuffOverlay.BasePreviewRange = nil
+        BuffOverlay.CurrentExpandedRange = nil
+    end
+end
+
+local function UpdateBuffOverlay(CursorPosition, DeltaTime)
+    if not BuffOverlay.Enabled or not CursorPosition then
+        ClearBuffVisuals()
+        return
+    end
+
+    local TowersFolder = workspace:FindFirstChild("Towers")
+    if not TowersFolder then
+        ClearBuffVisuals()
+        return
+    end
+
+    BuffOverlay.PulseClock = BuffOverlay.PulseClock + (DeltaTime or 0.016)
+    local PulseAlpha = (math.sin(BuffOverlay.PulseClock * 4) + 1) * 0.5
+
+    local FoundSupports = {}
+    local ActiveDJBuffPercent = 0
+
+    for _, TowerInstance in ipairs(TowersFolder:GetChildren()) do
+        local Replicator = TowerInstance:FindFirstChild("TowerReplicator")
+        if Replicator then
+            local TowerName = Replicator:GetAttribute("Name")
+            local Definition = BuffOverlay.SupportDefinitions[TowerName]
+            if Definition then
+                local UpgradeLevel = Replicator:GetAttribute("Upgrade") or 0
+                
+                local BaseRange = Replicator:GetAttribute("Range")
+                if not BaseRange or BaseRange <= 0 then
+                    BaseRange = Definition.FallbackRanges[UpgradeLevel] or Definition.FallbackRanges[0] or 12
+                end
+
+                local RangeBuff = Replicator:GetAttribute("RangeBuff") or 0
+                local ActualRadius = BaseRange * (1 + (RangeBuff / 100))
+                local TowerPosition = TowerInstance:GetPivot().Position
+
+                table.insert(FoundSupports, {
+                    Name = TowerName,
+                    Tag = Definition.Tag,
+                    Definition = Definition,
+                    Instance = TowerInstance,
+                    Position = TowerPosition,
+                    Radius = ActualRadius,
+                    Replicator = Replicator,
+                    Upgrade = UpgradeLevel
+                })
+            end
+        end
+    end
+
+    if #FoundSupports == 0 then
+        ClearBuffVisuals()
+        return
+    end
+
+    for _, SupportData in ipairs(FoundSupports) do
+        local FlatDistance = (Vector3.new(SupportData.Position.X, 0, SupportData.Position.Z) - Vector3.new(CursorPosition.X, 0, CursorPosition.Z)).Magnitude
+        local InRange = (FlatDistance <= SupportData.Radius)
+
+        if InRange and SupportData.Tag == "DJ" then
+            local TrackName = SupportData.Replicator:GetAttribute("Track") or "Purple"
+            local BuffPercent = GetDJRangeBuffPercent(SupportData.Upgrade, TrackName)
+            if BuffPercent > ActiveDJBuffPercent then
+                ActiveDJBuffPercent = BuffPercent
+            end
+        end
+
+        local VisualRecord = BuffOverlay.AuraVisuals[SupportData.Instance]
+        if not VisualRecord then
+            local OutlinePart = Instance.new("Part")
+            OutlinePart.Name = "AuraOutline_" .. SupportData.Tag
+            OutlinePart.Anchored = true
+            OutlinePart.CanCollide = false
+            OutlinePart.CanTouch = false
+            OutlinePart.CanQuery = false
+            OutlinePart.Transparency = 1
+            OutlinePart.Material = Enum.Material.Plastic
+            OutlinePart.Parent = workspace
+
+            local Adornment = Instance.new("CylinderHandleAdornment")
+            Adornment.Name = "RingAdornment"
+            Adornment.Adornee = OutlinePart
+            Adornment.AlwaysOnTop = false
+            Adornment.ZIndex = 1
+            Adornment.CFrame = CFrame.Angles(math.rad(90), 0, 0)
+            Adornment.Parent = OutlinePart
+
+            VisualRecord = {
+                OutlinePart = OutlinePart,
+                Adornment = Adornment
+            }
+            BuffOverlay.AuraVisuals[SupportData.Instance] = VisualRecord
+        end
+
+        local FloorY = SupportData.Position.Y + 0.08
+        VisualRecord.OutlinePart.Position = Vector3.new(SupportData.Position.X, FloorY, SupportData.Position.Z)
+        VisualRecord.OutlinePart.Size = Vector3.new(0.2, 0.2, 0.2)
+
+        local Radius = SupportData.Radius
+        local Thickness = 0.18
+        VisualRecord.Adornment.Radius = Radius
+        VisualRecord.Adornment.InnerRadius = Radius - Thickness
+        VisualRecord.Adornment.Height = 0.05
+        VisualRecord.Adornment.Color3 = InRange and SupportData.Definition.GlowColor or SupportData.Definition.Color
+        VisualRecord.Adornment.Transparency = InRange and (0.15 - (PulseAlpha * 0.1)) or 0.55
+    end
+
+    for SupportInstance, VisualRecord in pairs(BuffOverlay.AuraVisuals) do
+        if not SupportInstance or not SupportInstance.Parent then
+            if VisualRecord.OutlinePart then VisualRecord.OutlinePart:Destroy() end
+            BuffOverlay.AuraVisuals[SupportInstance] = nil
+        end
+    end
+
+    pcall(function()
+        local UpgradesStore = require(ReplicatedStorage.Client.Interfaces.Stores.Game.UpgradesStore)
+        local State = UpgradesStore.getState()
+        local CurrentStoreRange = State.range or 0
+
+        if CurrentStoreRange > 0 then
+            if not BuffOverlay.BasePreviewRange or (CurrentStoreRange ~= BuffOverlay.CurrentExpandedRange and CurrentStoreRange ~= BuffOverlay.BasePreviewRange) then
+                BuffOverlay.BasePreviewRange = CurrentStoreRange
+            end
+
+            local TargetRange = BuffOverlay.BasePreviewRange
+            if ActiveDJBuffPercent > 0 and TargetRange then
+                TargetRange = math.round(BuffOverlay.BasePreviewRange * (1 + (ActiveDJBuffPercent / 100)))
+            end
+
+            if TargetRange and TargetRange ~= CurrentStoreRange then
+                BuffOverlay.CurrentExpandedRange = TargetRange
+                UpgradesStore.updateZone({ range = TargetRange })
+            end
+        end
+    end)
+end
+
+RunService.RenderStepped:Connect(function(DeltaTime)
+    if GameState ~= "GAME" then
+        ClearBuffVisuals()
+        return
+    end
+
+    local NewPlacementController = require(ReplicatedStorage.Client.Controllers.Game.NewPlacementController)
+    if not NewPlacementController.Active or not BuffOverlay.Enabled then
+        ClearBuffVisuals()
+        return
+    end
+
+    local TargetPosition = TowerSnapper and TowerSnapper.LastSnapped
+    if not TargetPosition then
+        local Mouse = LocalPlayer:GetMouse()
+        TargetPosition = Mouse.Hit and Mouse.Hit.Position
+    end
+    
+    if TargetPosition then
+        UpdateBuffOverlay(TargetPosition, DeltaTime)
+    else
+        ClearBuffVisuals()
+    end
+end)
 
 if GameState == "GAME" then
     HookPlacementSystem()
@@ -1869,14 +2180,28 @@ Window:Line()
 local Interactive = Window:Tab({Title = "Interactive", Icon = "mouse-pointer-click"}) do
     
     Interactive:Section({Title = "Tower Controls"})
-    
+        
     Interactive:Toggle({
         Title = "Tower Snapper",
-        Desc = "Automatically snaps tower preview to the nearest valid position when hovering invalid spots",
-        Value = Globals.TowerSnapper,
-        Callback = function(v)
-            TowerSnapper.Enabled = v
-            SetSetting("TowerSnapper", v)
+        Desc = "Automatically snaps and honeycomb-packs towers into the nearest valid position when hovering invalid spots",
+        Value = Globals.Snapper ~= nil and Globals.Snapper or true,
+        Callback = function(Value)
+            TowerSnapper.Enabled = Value
+            SetSetting("Snapper", Value)
+            InvalidateSnapCache()
+        end
+    })
+
+    Interactive:Toggle({
+        Title = "Buff Indicator Overlay",
+        Desc = "Shows active DJ/Commander/Medic range auras and in-range badges while placing",
+        Value = Globals.BuffOverlay ~= nil and Globals.BuffOverlay or true,
+        Callback = function(Value)
+            BuffOverlay.Enabled = Value
+            SetSetting("BuffOverlay", Value)
+            if not Value then
+                ClearBuffVisuals()
+            end
         end
     })
 
