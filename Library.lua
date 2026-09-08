@@ -2804,6 +2804,15 @@ local Progression = Window:Tab({Title = "Progression", Icon = "settings"}) do
             end
         end
     })
+
+    Progression:Button({
+        Title = "Copy Auto Progression Script (Paste this into auto exec folder)",
+        Desc = "Copies Rya's Auto Progression loader",
+        Callback = function()
+            setclipboard([[loadstring(game:HttpGet("https://raw.githubusercontent.com/Ceepizz/rya/refs/heads/main/AutoProgress.lua"))()]])
+        end
+    })
+    
     Progression:Section({Title = "Account Statistics"})
 
     Progression:Label({Title = "Coins: " .. tostring(game.Players.LocalPlayer.Coins.Value)})
