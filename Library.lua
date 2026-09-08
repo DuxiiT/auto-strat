@@ -3958,7 +3958,7 @@ function TDS:Mode(difficulty, code)
 
     if difficulty == "Trial" then
         local success = pcall(function()
-            RemoteFunction:InvokeServer(
+            RemoteFunc:InvokeServer(
                 "Multiplayer",
                 "v2:start",
                 {
