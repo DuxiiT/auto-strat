@@ -3329,8 +3329,10 @@ local function RejoinMatch()
                         count = 1
                     }
                 elseif CurrentMode == "Trial" then
-                    SmartTeleportToLobby()
-                    return true
+                    payload = {
+                        mode = "Trials",
+                        count = 1
+                    }
                 else
                     payload = {
                         difficulty = CurrentMode,
