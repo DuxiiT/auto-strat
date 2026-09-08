@@ -3957,35 +3957,18 @@ function TDS:Mode(difficulty, code)
     end
 
     if difficulty == "Trial" then
-        local Elevators = workspace:WaitForChild("TrialElevators")
-        local Network = ReplicatedStorage:WaitForChild("Network")
+        local success = pcall(function()
+            RemoteFunction:InvokeServer(
+                "Multiplayer",
+                "v2:start",
+                {
+                    count = 1,
+                    mode = "Trials"
+                }
+            )
+        end)
         
-        if Elevators and Network then
-            local targetElevator = nil
-            
-            repeat
-                for _, v in pairs(Elevators:GetChildren()) do
-                    if v.Name:match("Elevator") then
-                        targetElevator = v
-                        break
-                    end
-                end
-                if not targetElevator then task.wait(0.5) end
-            until targetElevator
-
-            task.spawn(function()
-                local ElevatorsNet = Network:WaitForChild("Elevators")
-                local EnterRemote = ElevatorsNet:WaitForChild("RF:Enter")
-                local SetSizeRemote = ElevatorsNet:WaitForChild("RF:SetSize")
-                local SetReadyRemote = ElevatorsNet:WaitForChild("RF:SetReady")
-                
-                pcall(function() EnterRemote:InvokeServer(targetElevator) end)
-                pcall(function() SetSizeRemote:InvokeServer(1) end)
-                pcall(function() SetReadyRemote:InvokeServer(true) end)
-            end)
-            
-            return true
-        end
+        return success
     end
 
     local LobbyHud = PlayerGui:WaitForChild("ReactLobbyHud", 30)
