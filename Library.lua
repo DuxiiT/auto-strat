@@ -1811,7 +1811,7 @@ end
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/UI.lua"))()
 
 Window = Library:Window({
-    Title = "Aether Hub",
+    Title = "CORE",
     Desc = "your #1 hub",
     Theme = "Default",
     DiscordLink = "https://discord.gg/aetherhub",
