@@ -1460,12 +1460,13 @@ function Library:Window(p)
 	WindowControls.AnchorPoint = Vector2.new(1, 0.5)
 	WindowControls.BackgroundTransparency = 1
 	WindowControls.Position = UDim2.new(1, -14, 0.5, 0)
-	WindowControls.Size = UDim2.new(0, 95, 0, 24)
+	WindowControls.Size = UDim2.new(0, 120, 0, 24)
 
 	WinLayout.Parent = WindowControls
 	WinLayout.FillDirection = Enum.FillDirection.Horizontal
 	WinLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	WinLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	WinLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	WinLayout.Padding = UDim.new(0, 10)
 
 	local DiscordBtn = Instance.new("ImageButton")
@@ -1477,19 +1478,82 @@ function Library:Window(p)
 	DiscordBtn.ImageColor3 = Color3.fromRGB(150, 150, 160)
 	DiscordBtn.LayoutOrder = 2
 
+	Minisize_1.Name = "Minimize"
+	Minisize_1.Parent = WindowControls
+	Minisize_1.BackgroundTransparency = 1
+	Minisize_1.Size = UDim2.new(0, 14, 0, 14)
+	Minisize_1.ImageTransparency = 1
+	Minisize_1.AutoButtonColor = false
+	Minisize_1.LayoutOrder = 3
+
+	local MinimizeLine = Instance.new("Frame")
+	MinimizeLine.Name = "Line"
+	MinimizeLine.Parent = Minisize_1
+	MinimizeLine.AnchorPoint = Vector2.new(0.5, 0.5)
+	MinimizeLine.Position = UDim2.new(0.5, 0, 0.5, 2)
+	MinimizeLine.Size = UDim2.new(0, 10, 0, 1.5)
+	MinimizeLine.BorderSizePixel = 0
+	MinimizeLine.BackgroundColor3 = Color3.fromRGB(150, 150, 160)
+
+	local MinimizeCorner = Instance.new("UICorner")
+	MinimizeCorner.CornerRadius = UDim.new(1, 0)
+	MinimizeCorner.Parent = MinimizeLine
+
 	Close_1.Name = "Close"
 	Close_1.Parent = WindowControls
 	Close_1.BackgroundTransparency = 1
 	Close_1.Size = UDim2.new(0, 14, 0, 14)
 	Close_1.Image = "rbxassetid://15082305656"
 	Close_1.ImageColor3 = Color3.fromRGB(150, 150, 160)
-	Close_1.LayoutOrder = 3
+	Close_1.LayoutOrder = 4
+
+	-- Floating logo shown while the main window is minimized
+	local FloatingLogoButton = Instance.new("ImageButton")
+	local FloatingLogoCorner = Instance.new("UICorner")
+	local FloatingLogoStroke = Instance.new("UIStroke")
+
+	FloatingLogoButton.Name = "FloatingLogo"
+	FloatingLogoButton.Parent = ScreenGui
+	FloatingLogoButton.AnchorPoint = Vector2.new(0.5, 0.5)
+	FloatingLogoButton.Position = UDim2.new(0.5, 0, 0.5, 0)
+	FloatingLogoButton.Size = UDim2.new(0, 52, 0, 52)
+	FloatingLogoButton.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+	FloatingLogoButton.BorderSizePixel = 0
+	FloatingLogoButton.AutoButtonColor = false
+	FloatingLogoButton.Image = logoData.Image
+	FloatingLogoButton.ImageRectSize = logoData.ImageRectSize
+	FloatingLogoButton.ImageRectOffset = logoData.ImageRectPosition
+	FloatingLogoButton.ImageColor3 = Color3.fromRGB(255, 42, 66)
+	FloatingLogoButton.ScaleType = Enum.ScaleType.Fit
+	FloatingLogoButton.Visible = false
+	FloatingLogoButton.ZIndex = 100
+
+	local FloatingLogoPadding = Instance.new("UIPadding")
+	FloatingLogoPadding.PaddingTop = UDim.new(0, 11)
+	FloatingLogoPadding.PaddingBottom = UDim.new(0, 11)
+	FloatingLogoPadding.PaddingLeft = UDim.new(0, 11)
+	FloatingLogoPadding.PaddingRight = UDim.new(0, 11)
+	FloatingLogoPadding.Parent = FloatingLogoButton
+
+	FloatingLogoCorner.CornerRadius = UDim.new(0, 12)
+	FloatingLogoCorner.Parent = FloatingLogoButton
+
+	FloatingLogoStroke.Color = Color3.fromRGB(48, 48, 60)
+	FloatingLogoStroke.Thickness = 1.2
+	FloatingLogoStroke.Parent = FloatingLogoButton
 
 	DiscordBtn.MouseEnter:Connect(function()
 		tw({v = DiscordBtn, t = 0.15, g = {ImageColor3 = Color3.fromRGB(88, 101, 242)}}):Play()
 	end)
 	DiscordBtn.MouseLeave:Connect(function()
 		tw({v = DiscordBtn, t = 0.15, g = {ImageColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
+	end)
+
+	Minisize_1.MouseEnter:Connect(function()
+		tw({v = MinimizeLine, t = 0.15, g = {BackgroundColor3 = Color3.fromRGB(255, 42, 66)}}):Play()
+	end)
+	Minisize_1.MouseLeave:Connect(function()
+		tw({v = MinimizeLine, t = 0.15, g = {BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
 	end)
 
 	Close_1.MouseEnter:Connect(function()
@@ -1534,6 +1598,9 @@ function Library:Window(p)
 		tw({v = BreadcrumbHeader, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(250, 250, 255)}}):Play()
 		tw({v = SessionHeader, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(110, 115, 130) or Color3.fromRGB(155, 155, 170)}}):Play()
 		tw({v = Close_1, t = 0.25, g = {ImageColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
+		tw({v = MinimizeLine, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
+		tw({v = FloatingLogoButton, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(250, 251, 253) or Color3.fromRGB(15, 15, 18)}}):Play()
+		tw({v = FloatingLogoStroke, t = 0.25, g = {Color = isLight and Color3.fromRGB(218, 222, 232) or Color3.fromRGB(48, 48, 60)}}):Play()
 		tw({v = DiscordBtn, t = 0.25, g = {ImageColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
 
 		-- Account / Profile
@@ -3300,6 +3367,89 @@ function Library:Window(p)
 			end
 		end)
 
+		local isHidden = false
+		local isMinimized = false
+		local floatingDragging = false
+		local floatingDragged = false
+		local floatingDragStart = nil
+		local floatingStartPosition = nil
+
+		local function setMinimized(state)
+			state = state == true
+			if isMinimized == state then
+				return
+			end
+
+			isMinimized = state
+			isResizing = false
+
+			if isMinimized then
+				-- Keep the full window's exact size/position untouched; just hide it.
+				Shadow_1.Visible = false
+				FloatingLogoButton.Visible = not isHidden
+			else
+				FloatingLogoButton.Visible = false
+				if not isHidden then
+					Shadow_1.Visible = true
+					Background_1.GroupTransparency = 0
+				end
+			end
+		end
+
+		Minisize_1.MouseButton1Click:Connect(function()
+			setMinimized(true)
+		end)
+
+		-- Drag the floating logo without accidentally restoring the window.
+		FloatingLogoButton.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch then
+				floatingDragging = true
+				floatingDragged = false
+				floatingDragStart = input.Position
+				floatingStartPosition = FloatingLogoButton.Position
+			end
+		end)
+
+		U.InputChanged:Connect(function(input)
+			if floatingDragging
+				and floatingDragStart
+				and floatingStartPosition
+				and (input.UserInputType == Enum.UserInputType.MouseMovement
+					or input.UserInputType == Enum.UserInputType.Touch) then
+
+				local delta = input.Position - floatingDragStart
+				if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
+					floatingDragged = true
+				end
+
+				FloatingLogoButton.Position = UDim2.new(
+					floatingStartPosition.X.Scale,
+					floatingStartPosition.X.Offset + delta.X,
+					floatingStartPosition.Y.Scale,
+					floatingStartPosition.Y.Offset + delta.Y
+				)
+			end
+		end)
+
+		U.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch then
+				if floatingDragging then
+					floatingDragging = false
+				end
+			end
+		end)
+
+		FloatingLogoButton.MouseButton1Click:Connect(function()
+			if floatingDragged then
+				floatingDragged = false
+				return
+			end
+
+			setMinimized(false)
+		end)
+
 		Close_1.MouseButton1Click:Connect(function()
 			Tabs:Dialog({
 				Title = "Close interface?",
@@ -3315,16 +3465,23 @@ function Library:Window(p)
 			})
 		end)
 
-		local isHidden = false
 		local function toggleUI()
 			isHidden = not isHidden
 			if isHidden then
-				tw({v = Background_1, t = 0.15, g = {GroupTransparency = 1}}):Play()
-				task.wait(0.15)
-				Shadow_1.Visible = false
+				if isMinimized then
+					FloatingLogoButton.Visible = false
+				else
+					tw({v = Background_1, t = 0.15, g = {GroupTransparency = 1}}):Play()
+					task.wait(0.15)
+					Shadow_1.Visible = false
+				end
 			else
-				Shadow_1.Visible = true
-				tw({v = Background_1, t = 0.15, g = {GroupTransparency = 0}}):Play()
+				if isMinimized then
+					FloatingLogoButton.Visible = true
+				else
+					Shadow_1.Visible = true
+					tw({v = Background_1, t = 0.15, g = {GroupTransparency = 0}}):Play()
+				end
 			end
 		end
 
