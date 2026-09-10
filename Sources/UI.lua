@@ -1252,11 +1252,54 @@ function Library:Window(p)
 	LogoText.Position = UDim2.new(0, 35, 0.5, 0)
 	LogoText.Size = UDim2.new(1, -50, 0, 22)
 	LogoText.Font = Enum.Font.GothamBold
-	LogoText.Text = "ORE - v1.0"
+	LogoText.Text = "ORE"
 	LogoText.TextColor3 = Color3.fromRGB(255, 255, 255)
 	LogoText.TextSize = 16
 	LogoText.TextXAlignment = Enum.TextXAlignment.Left
 	LogoText.TextYAlignment = Enum.TextYAlignment.Center
+	LogoText.Size = UDim2.new(0, 34, 0, 22)
+
+	local LogoTextGradient = Instance.new("UIGradient")
+	LogoTextGradient.Name = "LogoTextGradient"
+
+	-- One soft black/blood-red gradient for ORE.
+	-- Near-black edges stay visible while still reading as black.
+	local NearBlack = Color3.fromRGB(128, 0, 0)
+	local DarkBloodRed = Color3.fromRGB(170, 0, 0)
+	local BloodRed = Color3.fromRGB(255, 0, 0)
+
+	LogoTextGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0.00, NearBlack),
+		ColorSequenceKeypoint.new(0.25, DarkBloodRed),
+		ColorSequenceKeypoint.new(0.50, BloodRed),
+		ColorSequenceKeypoint.new(0.75, DarkBloodRed),
+		ColorSequenceKeypoint.new(1.00, NearBlack)
+	}
+	LogoTextGradient.Rotation = 0
+	LogoTextGradient.Offset = Vector2.new(-1, 0)
+	LogoTextGradient.Parent = LogoText
+
+	-- Simple left-to-right sweep, then restart.
+	local LogoTextGradientTween = Tw:Create(
+		LogoTextGradient,
+		TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false),
+		{Offset = Vector2.new(1, 0)}
+	)
+	LogoTextGradientTween:Play()
+
+	local LogoVersionText = Instance.new("TextLabel")
+	LogoVersionText.Name = "LogoVersionText"
+	LogoVersionText.Parent = LogoFrame
+	LogoVersionText.AnchorPoint = Vector2.new(0, 0.5)
+	LogoVersionText.BackgroundTransparency = 1
+	LogoVersionText.Position = UDim2.new(0, 69, 0.5, 0)
+	LogoVersionText.Size = UDim2.new(1, -84, 0, 22)
+	LogoVersionText.Font = Enum.Font.GothamBold
+	LogoVersionText.Text = " - v1.0"
+	LogoVersionText.TextColor3 = Color3.fromRGB(255, 255, 255)
+	LogoVersionText.TextSize = 16
+	LogoVersionText.TextXAlignment = Enum.TextXAlignment.Left
+	LogoVersionText.TextYAlignment = Enum.TextYAlignment.Center
 
 	-- TAB LIST CONTAINER
 	local TabListFrame = Instance.new("ScrollingFrame")
@@ -1594,7 +1637,7 @@ function Library:Window(p)
 		tw({v = UIStroke_Win, t = 0.25, g = {Color = isLight and Color3.fromRGB(218, 222, 232) or Color3.fromRGB(48, 48, 60)}}):Play()
 		tw({v = Sidebar, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(250, 251, 253) or Color3.fromRGB(15, 15, 18)}}):Play()
 		tw({v = SidebarBorder, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(222, 226, 236) or Color3.fromRGB(30, 30, 38)}}):Play()
-		tw({v = LogoText, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(255, 255, 255)}}):Play()
+		tw({v = LogoText, t = 0.25, g = {TextColor3 = Color3.fromRGB(255, 255, 255)}}):Play()
 		tw({v = BreadcrumbHeader, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(250, 250, 255)}}):Play()
 		tw({v = SessionHeader, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(110, 115, 130) or Color3.fromRGB(155, 155, 170)}}):Play()
 		tw({v = Close_1, t = 0.25, g = {ImageColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
