@@ -3656,6 +3656,9 @@ local function IsMapAvailable(name)
 end
 
 -- // timescale logic
+local gameStateReplicator =
+    ReplicatedStorage:WaitForChild("StateReplicators"):WaitForChild("GameStateReplicator")
+
 local function SetGameTimescale(TargetVal)
     if GameState ~= "GAME" then 
         return 
@@ -3670,12 +3673,18 @@ local function SetGameTimescale(TargetVal)
             break
         end
     end
-    if not TargetIdx then return end
 
-    local SpeedLabel = game.Players.LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale.Speed
+    if not TargetIdx then
+        return
+    end
+
+    local SpeedLabel =
+        LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale.Speed
 
     local CurrentVal = tonumber(SpeedLabel.Text:match("x([%d%.]+)"))
-    if not CurrentVal then return end
+    if not CurrentVal then
+        return
+    end
 
     local CurrentIdx
     for i, v in ipairs(SpeedList) do
@@ -3684,9 +3693,13 @@ local function SetGameTimescale(TargetVal)
             break
         end
     end
-    if not CurrentIdx then return end
+
+    if not CurrentIdx then
+        return
+    end
 
     local diff = TargetIdx - CurrentIdx
+
     if diff < 0 then
         diff = #SpeedList + diff
     end
@@ -3696,20 +3709,28 @@ local function SetGameTimescale(TargetVal)
             "TicketsManager",
             "CycleTimeScale"
         )
+
         task.wait(0.5)
     end
 end
 
 local function UnlockSpeedTickets()
-    if GameState ~= "GAME" then 
-        return 
+    if GameState ~= "GAME" then
+        return
     end
 
     if LocalPlayer.TimescaleTickets.Value >= 1 then
-        local TimescaleButton = LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale
+        local TimescaleButton =
+            LocalPlayer.PlayerGui.ReactUniversalHotbar.Frame.timescale
+
         local LockIcon = TimescaleButton:FindFirstChild("Lock")
+
         if LockIcon and LockIcon.Visible then
-            ReplicatedStorage.RemoteFunction:InvokeServer('TicketsManager', 'UnlockTimeScale')
+            ReplicatedStorage.RemoteFunction:InvokeServer(
+                "TicketsManager",
+                "UnlockTimeScale"
+            )
+
             Logger:Log("Unlocked timescale tickets")
         end
     else
@@ -3718,29 +3739,41 @@ local function UnlockSpeedTickets()
 end
 
 ApplyTimeScaleOnce = function()
-    if not Globals.TimeScaleEnabled or GameState ~= "GAME" then
+    if not Globals.TimeScaleEnabled then
+        return
+    end
+
+    if gameStateReplicator:GetAttribute("GameStarted") ~= true then
         return
     end
 
     local frame = GetTimescaleFrame()
+
     if not frame or not frame.Visible then
         return
     end
 
-    local desired = CoerceTimeScaleValue(Globals.TimeScaleValue, 2)
+    local desired = CoerceTimeScaleValue(
+        Globals.TimeScaleValue,
+        2
+    )
+
     if not desired then
         return
     end
 
     local lock = frame:FindFirstChild("Lock")
+
     if lock and lock.Visible then
         if LocalPlayer.TimescaleTickets.Value < 1 then
             if not TimeScaleNoTicketsWarned then
                 Logger:Log("No timescale tickets left")
                 TimeScaleNoTicketsWarned = true
             end
+
             return
         end
+
         UnlockSpeedTickets()
         task.wait(0.4)
     else
@@ -3754,6 +3787,7 @@ StartTimeScale = function()
     if TimeScaleRunning or not Globals.TimeScaleEnabled then
         return
     end
+
     TimeScaleRunning = true
 
     task.spawn(function()
@@ -3761,6 +3795,7 @@ StartTimeScale = function()
             ApplyTimeScaleOnce()
             task.wait(3)
         end
+
         TimeScaleNoTicketsWarned = false
         TimeScaleRunning = false
     end)
