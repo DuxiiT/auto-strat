@@ -3153,9 +3153,11 @@ RunService.RenderStepped:Connect(function()
             StackSphere.Transparency = 0.5
             StackSphere.Anchored = true
             StackSphere.CanCollide = false
+            StackSphere.CanTouch = false
+            StackSphere.CanQuery = false
             StackSphere.Material = Enum.Material.Neon
             StackSphere.Parent = workspace
-            mouse.TargetFilter = StackSphere
+            mouse.TargetFilter = workspace:FindFirstChild("Towers") or StackSphere
         end
         local hit = mouse.Hit
         if hit then StackSphere.Position = hit.Position end
