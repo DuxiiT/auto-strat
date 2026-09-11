@@ -1263,17 +1263,16 @@ function Library:Window(p)
 	LogoTextGradient.Name = "LogoTextGradient"
 
 	-- One soft black/blood-red gradient for ORE.
-	-- Near-black edges stay visible while still reading as black.
-	local NearBlack = Color3.fromRGB(128, 0, 0)
+	local DeepRed = Color3.fromRGB(128, 0, 0)
 	local DarkBloodRed = Color3.fromRGB(170, 0, 0)
 	local BloodRed = Color3.fromRGB(255, 0, 0)
 
 	LogoTextGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0.00, NearBlack),
+		ColorSequenceKeypoint.new(0.00, DeepRed),
 		ColorSequenceKeypoint.new(0.25, DarkBloodRed),
 		ColorSequenceKeypoint.new(0.50, BloodRed),
 		ColorSequenceKeypoint.new(0.75, DarkBloodRed),
-		ColorSequenceKeypoint.new(1.00, NearBlack)
+		ColorSequenceKeypoint.new(1.00, DeepRed)
 	}
 	LogoTextGradient.Rotation = 0
 	LogoTextGradient.Offset = Vector2.new(-1, 0)
