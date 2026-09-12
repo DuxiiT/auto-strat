@@ -3740,6 +3740,13 @@ ApplyTimeScaleOnce = function()
         return
     end
 
+    local stateReplicators = ReplicatedStorage:FindFirstChild("StateReplicators")
+    local gameStateReplicator = stateReplicators and stateReplicators:FindFirstChild("GameStateReplicator")
+
+    if not gameStateReplicator then
+        return
+    end
+
     if gameStateReplicator:GetAttribute("GameStarted") ~= true then
         return
     end
@@ -3778,24 +3785,6 @@ ApplyTimeScaleOnce = function()
     end
 
     SetGameTimescale(desired)
-end
-
-StartTimeScale = function()
-    if TimeScaleRunning or not Globals.TimeScaleEnabled then
-        return
-    end
-
-    TimeScaleRunning = true
-
-    task.spawn(function()
-        while Globals.TimeScaleEnabled do
-            ApplyTimeScaleOnce()
-            task.wait(3)
-        end
-
-        TimeScaleNoTicketsWarned = false
-        TimeScaleRunning = false
-    end)
 end
 
 -- // ingame control
