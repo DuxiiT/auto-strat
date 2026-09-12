@@ -3656,9 +3656,6 @@ local function IsMapAvailable(name)
 end
 
 -- // timescale logic
-local gameStateReplicator =
-    ReplicatedStorage:WaitForChild("StateReplicators"):WaitForChild("GameStateReplicator")
-
 local function SetGameTimescale(TargetVal)
     if GameState ~= "GAME" then 
         return 
