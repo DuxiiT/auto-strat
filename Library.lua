@@ -3787,6 +3787,24 @@ ApplyTimeScaleOnce = function()
     SetGameTimescale(desired)
 end
 
+StartTimeScale = function()
+    if TimeScaleRunning or not Globals.TimeScaleEnabled then
+        return
+    end
+
+    TimeScaleRunning = true
+
+    task.spawn(function()
+        while Globals.TimeScaleEnabled do
+            ApplyTimeScaleOnce()
+            task.wait(3)
+        end
+
+        TimeScaleNoTicketsWarned = false
+        TimeScaleRunning = false
+    end)
+end
+
 -- // ingame control
 local function TriggerRestart()
     local UiRoot = PlayerGui:WaitForChild("ReactGameNewRewards")
