@@ -1818,8 +1818,15 @@ Window = Library:Window({
     Icon = 116265951007418,
     Config = {
         Keybind = Enum.KeyCode.LeftControl,
-        Size = UDim2.new(0, 500, 0, 400)
+        Size = UDim2.new(0, 680, 0, 420)
     }
+})
+
+Window:Notify({
+    Title = "Core",
+    Desc = "This is fully keyless, but please join our Discord to stay updated on new features and scripts! https://discord.gg/getcore",
+    Time = 5,
+    Type = "normal"
 })
 
 task.spawn(function()
