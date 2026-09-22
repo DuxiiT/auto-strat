@@ -245,13 +245,13 @@ local themes = {
 	},
 }
 
-local existingUI = game:GetService("CoreGui"):FindFirstChild("Aether")
+local existingUI = game:GetService("CoreGui"):FindFirstChild("Core")
 if existingUI then
 	existingUI:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Aether"
+ScreenGui.Name = "Core"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.DisplayOrder = 999
@@ -313,7 +313,7 @@ do
 
 	local IconList = nil
 	pcall(function()
-		IconList = loadstring(game:HttpGet('https://raw.githubusercontent.com/DuxiiT/auto-strat/refs/heads/main/Sources/Icons.lua'))()
+		IconList = loadstring(game:HttpGet('https://raw.githubusercontent.com/DuxiiT/Core/refs/heads/main/Roblox/Sources/Icons.lua'))()
 	end)
 
 	local IconAliases = {
@@ -592,7 +592,6 @@ do
 		task.delay(0.05, updateSize)
 		UIListLayout_2:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSize)
 
-		-- Premium subtle card hover highlight
 		Background.MouseEnter:Connect(function()
 			if currentWindowTheme.isLightMode then
 				tw({v = Background, t = 0.15, g = {BackgroundColor3 = Color3.fromRGB(236, 240, 248)}}):Play()
@@ -1160,7 +1159,6 @@ function Library:Window(p)
 	UIStroke_Win.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	UIStroke_Win.Parent = Background_1
 
-	-- Top accent ambient glow line
 	local TopGlowLine = Instance.new("Frame")
 	TopGlowLine.Name = "TopGlowLine"
 	TopGlowLine.Parent = Background_1
@@ -1183,8 +1181,121 @@ function Library:Window(p)
 	}
 	TopGlowGrad.Parent = TopGlowLine
 
+	local ReopenBtn = Instance.new("CanvasGroup")
+	local ReopenCorner = Instance.new("UICorner")
+	local ReopenStroke = Instance.new("UIStroke")
+	local ReopenTopGlow = Instance.new("Frame")
+	local ReopenGlowGrad = Instance.new("UIGradient")
+	local ReopenIcon = Instance.new("ImageLabel")
+	local ReopenTitle = Instance.new("TextLabel")
+	local ReopenKeybind = Instance.new("TextLabel")
+	local ReopenClick = Instance.new("TextButton")
+
+	ReopenBtn.Name = "ReopenButton"
+	ReopenBtn.Parent = ScreenGui
+	ReopenBtn.AnchorPoint = Vector2.new(0.5, 0)
+	ReopenBtn.Position = UDim2.new(0.5, 0, 0, -45)
+	ReopenBtn.Size = UDim2.new(0, 175, 0, 32)
+	ReopenBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+	ReopenBtn.BorderSizePixel = 0
+	ReopenBtn.GroupTransparency = 1
+	ReopenBtn.Visible = false
+	ReopenBtn.ZIndex = 100
+
+	ReopenCorner.CornerRadius = UDim.new(0, 8)
+	ReopenCorner.Parent = ReopenBtn
+
+	ReopenStroke.Color = Color3.fromRGB(48, 48, 60)
+	ReopenStroke.Thickness = 1.2
+	ReopenStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	ReopenStroke.Parent = ReopenBtn
+
+	ReopenTopGlow.Name = "TopGlowLine"
+	ReopenTopGlow.Parent = ReopenBtn
+	ReopenTopGlow.BackgroundColor3 = Color3.fromRGB(255, 42, 66)
+	ReopenTopGlow.BorderSizePixel = 0
+	ReopenTopGlow.Size = UDim2.new(1, 0, 0, 1.5)
+	ReopenTopGlow.ZIndex = 5
+
+	ReopenGlowGrad.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 42, 66)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 80, 100)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 42, 66))
+	}
+	ReopenGlowGrad.Transparency = NumberSequence.new{
+		NumberSequenceKeypoint.new(0, 0.7),
+		NumberSequenceKeypoint.new(0.25, 0.1),
+		NumberSequenceKeypoint.new(0.75, 0.1),
+		NumberSequenceKeypoint.new(1, 0.7)
+	}
+	ReopenGlowGrad.Parent = ReopenTopGlow
+
+	ReopenIcon.Name = "Icon"
+	ReopenIcon.Parent = ReopenBtn
+	ReopenIcon.AnchorPoint = Vector2.new(0, 0.5)
+	ReopenIcon.BackgroundTransparency = 1
+	ReopenIcon.Position = UDim2.new(0, 10, 0.5, 0)
+	ReopenIcon.Size = UDim2.new(0, 16, 0, 16)
+	local rIconData = gl(Icon)
+	ReopenIcon.Image = rIconData.Image
+	ReopenIcon.ImageRectSize = rIconData.ImageRectSize
+	ReopenIcon.ImageRectOffset = rIconData.ImageRectPosition
+	ReopenIcon.ImageColor3 = Color3.fromRGB(255, 42, 66)
+	ReopenIcon.ZIndex = 2
+
+	ReopenTitle.Name = "Title"
+	ReopenTitle.Parent = ReopenBtn
+	ReopenTitle.AnchorPoint = Vector2.new(0, 0.5)
+	ReopenTitle.BackgroundTransparency = 1
+	ReopenTitle.Position = UDim2.new(0, 23, 0.5, 0)
+	ReopenTitle.Size = UDim2.new(0, 75, 0, 16)
+	ReopenTitle.Font = Enum.Font.GothamBold
+	ReopenTitle.Text = "ORE"
+	ReopenTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ReopenTitle.TextSize = 12
+	ReopenTitle.TextXAlignment = Enum.TextXAlignment.Left
+	ReopenTitle.TextTruncate = Enum.TextTruncate.AtEnd
+	ReopenTitle.ZIndex = 2
+
+	local initKeyName = (Keybind and Keybind.Name) or "LeftCtrl"
+	if initKeyName == "LeftControl" then initKeyName = "LeftCtrl" end
+	if initKeyName == "RightControl" then initKeyName = "RightCtrl" end
+
+	ReopenKeybind.Name = "KeyHint"
+	ReopenKeybind.Parent = ReopenBtn
+	ReopenKeybind.AnchorPoint = Vector2.new(1, 0.5)
+	ReopenKeybind.BackgroundTransparency = 1
+	ReopenKeybind.Position = UDim2.new(1, -10, 0.5, 0)
+	ReopenKeybind.Size = UDim2.new(0, 60, 0, 16)
+	ReopenKeybind.Font = Enum.Font.GothamMedium
+	ReopenKeybind.Text = "[" .. initKeyName .. "]"
+	ReopenKeybind.TextColor3 = Color3.fromRGB(150, 150, 165)
+	ReopenKeybind.TextSize = 10.5
+	ReopenKeybind.TextXAlignment = Enum.TextXAlignment.Right
+	ReopenKeybind.ZIndex = 2
+
+	ReopenClick.Name = "Click"
+	ReopenClick.Parent = ReopenBtn
+	ReopenClick.BackgroundTransparency = 1
+	ReopenClick.Size = UDim2.new(1, 0, 1, 0)
+	ReopenClick.Text = ""
+	ReopenClick.ZIndex = 15
+
+	ReopenClick.MouseEnter:Connect(function()
+		tw({v = ReopenStroke, t = 0.15, g = {Color = Color3.fromRGB(255, 42, 66)}}):Play()
+		tw({v = ReopenKeybind, t = 0.15, g = {TextColor3 = Color3.fromRGB(255, 255, 255)}}):Play()
+		tw({v = ReopenBtn, t = 0.15, g = {BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(230, 235, 245) or Color3.fromRGB(24, 24, 32)}}):Play()
+	end)
+	ReopenClick.MouseLeave:Connect(function()
+		tw({v = ReopenStroke, t = 0.15, g = {Color = currentWindowTheme.isLightMode and Color3.fromRGB(218, 222, 232) or Color3.fromRGB(48, 48, 60)}}):Play()
+		tw({v = ReopenKeybind, t = 0.15, g = {TextColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(110, 115, 130) or Color3.fromRGB(150, 150, 165)}}):Play()
+		tw({v = ReopenBtn, t = 0.15, g = {BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(242, 244, 248) or Color3.fromRGB(15, 15, 18)}}):Play()
+	end)
+
 	addToTheme('Shadow', Shadow_1)
 	addToTheme('Background', Background_1)
+	addToTheme('Background', ReopenBtn)
+	addToTheme('Text & Icon', ReopenTitle)
 
 	local savedCloseSize = Background_1.Size
 	local org = Background_1.Size
@@ -1200,7 +1311,6 @@ function Library:Window(p)
 		}
 	}):Play()
 
-	-- SIDEBAR (Left Column: Logo + Tabs + Account Profile)
 	local Sidebar = Instance.new("Frame")
 	local SidebarCorner = Instance.new("UICorner")
 	local SidebarBorder = Instance.new("Frame")
@@ -1223,7 +1333,6 @@ function Library:Window(p)
 	SidebarBorder.Size = UDim2.new(0, 1, 1, 0)
 	SidebarBorder.ZIndex = 4
 
-	-- LOGO SECTION (Top Left)
 	local LogoFrame = Instance.new("Frame")
 	local LogoIcon = Instance.new("ImageLabel")
 	local LogoText = Instance.new("TextLabel")
@@ -1258,7 +1367,6 @@ function Library:Window(p)
 	LogoText.TextXAlignment = Enum.TextXAlignment.Left
 	LogoText.TextYAlignment = Enum.TextYAlignment.Center
 
-	-- TAB LIST CONTAINER
 	local TabListFrame = Instance.new("ScrollingFrame")
 	local TabListLayout = Instance.new("UIListLayout")
 	local TabListPadding = Instance.new("UIPadding")
@@ -1283,7 +1391,6 @@ function Library:Window(p)
 
 	changecanvas(TabListFrame, TabListLayout, 5)
 
-	-- ACCOUNT / PROFILE (Bottom of Sidebar)
 	local AccountInfo = Instance.new("Frame")
 	local AvatarFrame = Instance.new("Frame")
 	local AvatarImage = Instance.new("ImageLabel")
@@ -1405,7 +1512,6 @@ function Library:Window(p)
 	TypeLabel.TextXAlignment = Enum.TextXAlignment.Center
 	TypeLabel.TextYAlignment = Enum.TextYAlignment.Center
 
-	-- TOPBAR (Breadcrumb / Section Header + Controls)
 	local Topbar = Instance.new("Frame")
 	local BreadcrumbHeader = Instance.new("TextLabel")
 	local SessionHeader = Instance.new("TextLabel")
@@ -1460,10 +1566,11 @@ function Library:Window(p)
 	WindowControls.AnchorPoint = Vector2.new(1, 0.5)
 	WindowControls.BackgroundTransparency = 1
 	WindowControls.Position = UDim2.new(1, -14, 0.5, 0)
-	WindowControls.Size = UDim2.new(0, 95, 0, 24)
+	WindowControls.Size = UDim2.new(0, 115, 0, 24)
 
 	WinLayout.Parent = WindowControls
 	WinLayout.FillDirection = Enum.FillDirection.Horizontal
+	WinLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	WinLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	WinLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 	WinLayout.Padding = UDim.new(0, 10)
@@ -1477,19 +1584,34 @@ function Library:Window(p)
 	DiscordBtn.ImageColor3 = Color3.fromRGB(150, 150, 160)
 	DiscordBtn.LayoutOrder = 2
 
+	Minisize_1.Name = "Minimize"
+	Minisize_1.Parent = WindowControls
+	Minisize_1.BackgroundTransparency = 1
+	Minisize_1.Size = UDim2.new(0, 14, 0, 14)
+	Minisize_1.Image = "rbxassetid://10734896206"
+	Minisize_1.ImageColor3 = Color3.fromRGB(150, 150, 160)
+	Minisize_1.LayoutOrder = 3
+
 	Close_1.Name = "Close"
 	Close_1.Parent = WindowControls
 	Close_1.BackgroundTransparency = 1
 	Close_1.Size = UDim2.new(0, 14, 0, 14)
 	Close_1.Image = "rbxassetid://15082305656"
 	Close_1.ImageColor3 = Color3.fromRGB(150, 150, 160)
-	Close_1.LayoutOrder = 3
+	Close_1.LayoutOrder = 4
 
 	DiscordBtn.MouseEnter:Connect(function()
 		tw({v = DiscordBtn, t = 0.15, g = {ImageColor3 = Color3.fromRGB(88, 101, 242)}}):Play()
 	end)
 	DiscordBtn.MouseLeave:Connect(function()
 		tw({v = DiscordBtn, t = 0.15, g = {ImageColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
+	end)
+
+	Minisize_1.MouseEnter:Connect(function()
+		tw({v = Minisize_1, t = 0.15, g = {ImageColor3 = Color3.fromRGB(255, 255, 255)}}):Play()
+	end)
+	Minisize_1.MouseLeave:Connect(function()
+		tw({v = Minisize_1, t = 0.15, g = {ImageColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
 	end)
 
 	Close_1.MouseEnter:Connect(function()
@@ -1499,7 +1621,6 @@ function Library:Window(p)
 		tw({v = Close_1, t = 0.15, g = {ImageColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
 	end)
 
-	-- Animated Theme Toggle (Moon / Sun) using Icons.lua
 	local ThemeToggleBtn = Instance.new("ImageButton")
 	ThemeToggleBtn.Name = "ThemeToggleBtn"
 	ThemeToggleBtn.Parent = WindowControls
@@ -1525,7 +1646,6 @@ function Library:Window(p)
 	end)
 
 	local function applyTheme(isLight)
-		-- Window & topbar
 		tw({v = Background_1, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(242, 244, 248) or Color3.fromRGB(15, 15, 18)}}):Play()
 		tw({v = UIStroke_Win, t = 0.25, g = {Color = isLight and Color3.fromRGB(218, 222, 232) or Color3.fromRGB(48, 48, 60)}}):Play()
 		tw({v = Sidebar, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(250, 251, 253) or Color3.fromRGB(15, 15, 18)}}):Play()
@@ -1533,10 +1653,14 @@ function Library:Window(p)
 		tw({v = LogoText, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(255, 255, 255)}}):Play()
 		tw({v = BreadcrumbHeader, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(250, 250, 255)}}):Play()
 		tw({v = SessionHeader, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(110, 115, 130) or Color3.fromRGB(155, 155, 170)}}):Play()
+		tw({v = Minisize_1, t = 0.25, g = {ImageColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
 		tw({v = Close_1, t = 0.25, g = {ImageColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
 		tw({v = DiscordBtn, t = 0.25, g = {ImageColor3 = isLight and Color3.fromRGB(80, 85, 95) or Color3.fromRGB(150, 150, 160)}}):Play()
+		tw({v = ReopenBtn, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(242, 244, 248) or Color3.fromRGB(15, 15, 18)}}):Play()
+		tw({v = ReopenStroke, t = 0.25, g = {Color = isLight and Color3.fromRGB(218, 222, 232) or Color3.fromRGB(48, 48, 60)}}):Play()
+		tw({v = ReopenTitle, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(255, 255, 255)}}):Play()
+		tw({v = ReopenKeybind, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(110, 115, 130) or Color3.fromRGB(150, 150, 165)}}):Play()
 
-		-- Account / Profile
 		tw({v = AccountInfo, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(238, 240, 247) or Color3.fromRGB(20, 20, 26)}}):Play()
 		tw({v = AccountStroke, t = 0.25, g = {Color = isLight and Color3.fromRGB(215, 219, 232) or Color3.fromRGB(38, 38, 50)}}):Play()
 		tw({v = UsernameLabel, t = 0.25, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(255, 255, 255)}}):Play()
@@ -1545,7 +1669,6 @@ function Library:Window(p)
 		tw({v = TypeBadgeStroke, t = 0.25, g = {Color = isLight and (isPremium and Color3.fromRGB(255, 90, 110) or Color3.fromRGB(195, 200, 215)) or (isPremium and Color3.fromRGB(255, 42, 66) or Color3.fromRGB(55, 55, 75))}}):Play()
 		tw({v = TypeLabel, t = 0.25, g = {TextColor3 = isLight and (isPremium and Color3.fromRGB(220, 30, 50) or Color3.fromRGB(75, 80, 95)) or (isPremium and Color3.fromRGB(255, 70, 90) or Color3.fromRGB(170, 170, 190))}}):Play()
 
-		-- Sidebar Tabs
 		if Tabs and Tabs.List then
 			for _, item in ipairs(Tabs.List) do
 				if item.Page and item.Page.Visible then
@@ -1558,7 +1681,6 @@ function Library:Window(p)
 			end
 		end
 
-		-- Sections
 		for _, sec in ipairs(currentWindowTheme.sections) do
 			if sec.Frame and sec.Frame.Parent then
 				tw({v = sec.Frame, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(20, 20, 26)}}):Play()
@@ -1567,7 +1689,6 @@ function Library:Window(p)
 			end
 		end
 
-		-- Cards (Backgrounds)
 		for _, card in ipairs(currentWindowTheme.cards) do
 			if card.Background and card.Background.Parent then
 				tw({v = card.Background, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(246, 248, 252) or Color3.fromRGB(22, 22, 28)}}):Play()
@@ -1577,7 +1698,6 @@ function Library:Window(p)
 			end
 		end
 
-		-- Controls
 		for _, ctrl in ipairs(currentWindowTheme.controls) do
 			if ctrl.type == "slider" and ctrl.Track and ctrl.Track.Parent then
 				tw({v = ctrl.Track, t = 0.25, g = {BackgroundColor3 = isLight and Color3.fromRGB(215, 220, 230) or Color3.fromRGB(36, 36, 46)}}):Play()
@@ -1623,7 +1743,6 @@ function Library:Window(p)
 		currentWindowTheme.isLightMode = not currentWindowTheme.isLightMode
 		local isLight = currentWindowTheme.isLightMode
 
-		-- Animate rotation & scale punch
 		tw({v = ThemeToggleBtn, t = 0.12, s = Enum.EasingStyle.Quad, d = "Out", g = {Rotation = 90, Size = UDim2.new(0, 11, 0, 11), ImageTransparency = 0.5}}):Play()
 		task.delay(0.12, function()
 			updateThemeButtonIcon(isLight)
@@ -1633,7 +1752,6 @@ function Library:Window(p)
 		applyTheme(isLight)
 	end)
 
-	-- CONTENT AREA (Right Side)
 	local Page_1 = Instance.new("Frame")
 	Page_1.Name = "Page"
 	Page_1.Parent = Background_1
@@ -1752,7 +1870,6 @@ function Library:Window(p)
 		TabSubLabel.TextXAlignment = Enum.TextXAlignment.Left
 		TabSubLabel.LayoutOrder = 2
 
-		-- PAGE CONTENT CONTAINER
 		local InPage_1 = Instance.new("Frame")
 		local PageScroll = Instance.new("ScrollingFrame")
 		local PageLayout = Instance.new("UIListLayout")
@@ -1820,7 +1937,6 @@ function Library:Window(p)
 			end)
 			tw({v = TabTitleLabel, t = 0.18, g = {TextColor3 = isLight and Color3.fromRGB(20, 24, 33) or Color3.fromRGB(255, 255, 255)}}):Play()
 
-			-- Dynamically update topbar breadcrumb to match current tab (e.g. CORE // START, CORE // MODULES)
 			BreadcrumbHeader.Text = string.format("%s // %s", Title:upper(), TabTitle:upper())
 		end
 
@@ -3013,7 +3129,6 @@ function Library:Window(p)
 		return Func
 	end
 
-	-- NOTIFICATIONS
 	local Notification = Instance.new("Frame")
 	local UIPaddingNotif = Instance.new("UIPadding")
 	local UIListLayoutNotif = Instance.new("UIListLayout")
@@ -3232,7 +3347,7 @@ function Library:Window(p)
 	end
 
 	DiscordBtn.MouseButton1Click:Connect(function()
-		local dlink = DiscordLink or "https://discord.gg/aetherhub"
+		local dlink = DiscordLink or "https://discord.gg/getcore"
 		if setclipboard then setclipboard(dlink) end
 		Tabs:Notify({
 			Title = "Discord Link",
@@ -3242,9 +3357,7 @@ function Library:Window(p)
 		})
 	end)
 
-	-- WINDOW RESIZE & MINIMIZE CONTROLS
 	do
-		-- Bottom-right dynamic resizer handle
 		local ResizeHandle = Instance.new("ImageButton")
 		ResizeHandle.Name = "ResizeHandle"
 		ResizeHandle.Parent = Background_1
@@ -3316,21 +3429,44 @@ function Library:Window(p)
 		end)
 
 		local isHidden = false
-		local function toggleUI()
-			isHidden = not isHidden
+		local function setUIVisibility(visible)
+			isHidden = not visible
 			if isHidden then
 				tw({v = Background_1, t = 0.15, g = {GroupTransparency = 1}}):Play()
-				task.wait(0.15)
-				Shadow_1.Visible = false
+				task.delay(0.15, function()
+					if isHidden then
+						Shadow_1.Visible = false
+					end
+				end)
+				ReopenBtn.Visible = true
+				tw({v = ReopenBtn, t = 0.25, s = Enum.EasingStyle.Back, d = "Out", g = {Position = UDim2.new(0.5, 0, 0, 12), GroupTransparency = 0}}):Play()
 			else
+				tw({v = ReopenBtn, t = 0.15, s = Enum.EasingStyle.Quad, d = "In", g = {Position = UDim2.new(0.5, 0, 0, -45), GroupTransparency = 1}}):Play()
+				task.delay(0.15, function()
+					if not isHidden then
+						ReopenBtn.Visible = false
+					end
+				end)
 				Shadow_1.Visible = true
 				tw({v = Background_1, t = 0.15, g = {GroupTransparency = 0}}):Play()
 			end
 		end
 
+		local function toggleUI()
+			setUIVisibility(isHidden)
+		end
+
+		Minisize_1.MouseButton1Click:Connect(function()
+			setUIVisibility(false)
+		end)
+
+		ReopenClick.MouseButton1Click:Connect(function()
+			setUIVisibility(true)
+		end)
+
 		if keybindConnection then keybindConnection:Disconnect() end
 		keybindConnection = U.InputBegan:Connect(function(input)
-			if Tabs and Tabs.UIToggleKeybind and input.KeyCode == Tabs.UIToggleKeybind then
+			if (input.KeyCode == Enum.KeyCode.LeftControl or (Tabs and Tabs.UIToggleKeybind and input.KeyCode == Tabs.UIToggleKeybind)) then
 				if not U:GetFocusedTextBox() then
 					toggleUI()
 				end
@@ -3339,13 +3475,24 @@ function Library:Window(p)
 
 		function Tabs:SetUIToggleKeybind(newKey)
 			Tabs.UIToggleKeybind = newKey
+			if ReopenKeybind and newKey and newKey.Name then
+				local keyName = newKey.Name
+				if keyName == "LeftControl" then keyName = "LeftCtrl" end
+				if keyName == "RightControl" then keyName = "RightCtrl" end
+				ReopenKeybind.Text = "[" .. keyName .. "]"
+			end
 		end
 		function Tabs:GetUIToggleKeybind()
 			return Tabs.UIToggleKeybind
 		end
+		function Tabs:Toggle()
+			toggleUI()
+		end
+		function Tabs:SetVisible(vis)
+			setUIVisibility(vis)
+		end
 	end
 
-	-- DEFAULT START TAB (System & Account Telemetry)
 	local DashTab = Tabs:Tab({
 		Title = "START",
 		Subtitle = "Overview & System",
@@ -3379,15 +3526,15 @@ function Library:Window(p)
 	local LinksSec = DashTab:Section({ Title = "Official Links" })
 
 	LinksSec:Button({
-		Title = "Website: https://getcore.gg",
+		Title = "Website: https://getcore.lol",
 		Desc = "Click to copy official portal link to your clipboard",
 		Image = "globe",
 		Callback = function()
-			local site = "https://getcore.gg"
+			local site = "https://getcore.lol"
 			if setclipboard then setclipboard(site) end
 			Tabs:Notify({
 				Title = "Website Link Copied",
-				Desc = "https://getcore.gg copied to clipboard!",
+				Desc = "https://getcore.lol copied to clipboard!",
 				Time = 3,
 				Type = "normal"
 			})
@@ -3399,7 +3546,7 @@ function Library:Window(p)
 		Desc = "Click to copy Discord server invite link",
 		Image = "message-square",
 		Callback = function()
-			local dlink = DiscordLink or "https://discord.gg/aetherhub"
+			local dlink = DiscordLink or "https://discord.gg/getcore"
 			if setclipboard then setclipboard(dlink) end
 			Tabs:Notify({
 				Title = "Discord Link Copied",
@@ -3413,7 +3560,6 @@ function Library:Window(p)
 	local TiersSec = DashTab:Section({ Title = "License Keys" })
 	local tiersContainer = TiersSec:GetContainer()
 
-	-- Interactive Tier Comparison Card with Segmented Tabs
 	do
 		local isLight = currentWindowTheme.isLightMode
 
@@ -3442,7 +3588,6 @@ function Library:Window(p)
 		CardPadding.PaddingLeft = UDim.new(0, 12)
 		CardPadding.PaddingRight = UDim.new(0, 12)
 
-		-- Segmented Tab Switcher at the top
 		local SwitcherBar = Instance.new("Frame")
 		local SwitcherCorner = Instance.new("UICorner")
 		local SwitcherStroke = Instance.new("UIStroke")
@@ -3498,13 +3643,13 @@ function Library:Window(p)
 					"Priority support, around the clock",
 					"Premium Discord role"
 				},
-				btnText = "Get Premium • https://getcore.gg",
+				btnText = "Get Premium • https://getcore.lol",
 				action = function()
-					local url = "https://getcore.gg"
+					local url = "https://getcore.lol"
 					if setclipboard then setclipboard(url) end
 					Tabs:Notify({
 						Title = "Get Premium",
-						Desc = "https://getcore.gg copied to clipboard!",
+						Desc = "https://getcore.lol copied to clipboard!",
 						Time = 3,
 						Type = "normal"
 					})
@@ -3523,7 +3668,7 @@ function Library:Window(p)
 				},
 				btnText = "Boost Server • Copy Invite Link",
 				action = function()
-					local dlink = DiscordLink or "https://discord.gg/aetherhub"
+					local dlink = DiscordLink or "https://discord.gg/getcore"
 					if setclipboard then setclipboard(dlink) end
 					Tabs:Notify({
 						Title = "Discord Boost Invite",
@@ -3535,7 +3680,6 @@ function Library:Window(p)
 			}
 		}
 
-		-- Active Tier Header & Details Frame
 		local DetailsFrame = Instance.new("Frame")
 		DetailsFrame.Name = "Details"
 		DetailsFrame.Parent = Card
@@ -3579,7 +3723,6 @@ function Library:Window(p)
 		PriceLabel.TextColor3 = Color3.fromRGB(255, 42, 66)
 		PriceLabel.TextSize = 10
 
-		-- Perks Container
 		local PerksList = Instance.new("Frame")
 		local PerksLayout = Instance.new("UIListLayout")
 
@@ -3593,7 +3736,6 @@ function Library:Window(p)
 		PerksLayout.SortOrder = Enum.SortOrder.LayoutOrder
 		PerksLayout.Padding = UDim.new(0, 4)
 
-		-- Action CTA Button at the bottom
 		local ActionBtn = Instance.new("TextButton")
 		local ActionCorner = Instance.new("UICorner")
 		local ActionStroke = Instance.new("UIStroke")
@@ -3606,7 +3748,7 @@ function Library:Window(p)
 		ActionBtn.BackgroundColor3 = Color3.fromRGB(255, 42, 66)
 		ActionBtn.BorderSizePixel = 0
 		ActionBtn.Font = Enum.Font.GothamBold
-		ActionBtn.Text = "Get Premium • https://getcore.gg"
+		ActionBtn.Text = "Get Premium • https://getcore.lol"
 		ActionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		ActionBtn.TextSize = 11
 		ActionBtn.AutoButtonColor = false
@@ -3668,21 +3810,18 @@ function Library:Window(p)
 			ActionBtn.Text = data.btnText
 
 			if idx == 1 then
-				-- Free
 				PriceLabel.TextColor3 = Color3.fromRGB(130, 140, 155)
 				PriceBadge.BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(230, 233, 240) or Color3.fromRGB(30, 30, 38)
 				ActionBtn.BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(225, 228, 238) or Color3.fromRGB(34, 34, 44)
 				ActionBtn.TextColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(50, 55, 70) or Color3.fromRGB(200, 200, 215)
 				ActionStroke.Color = currentWindowTheme.isLightMode and Color3.fromRGB(200, 205, 218) or Color3.fromRGB(45, 45, 56)
 			elseif idx == 2 then
-				-- Premium
 				PriceLabel.TextColor3 = Color3.fromRGB(255, 60, 85)
 				PriceBadge.BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(255, 232, 236) or Color3.fromRGB(48, 18, 24)
 				ActionBtn.BackgroundColor3 = Color3.fromRGB(255, 42, 66)
 				ActionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 				ActionStroke.Color = Color3.fromRGB(255, 75, 95)
 			else
-				-- Booster
 				PriceLabel.TextColor3 = Color3.fromRGB(175, 115, 255)
 				PriceBadge.BackgroundColor3 = currentWindowTheme.isLightMode and Color3.fromRGB(245, 235, 255) or Color3.fromRGB(38, 20, 56)
 				ActionBtn.BackgroundColor3 = Color3.fromRGB(140, 75, 235)
@@ -3699,7 +3838,6 @@ function Library:Window(p)
 				end
 			end
 
-			-- Update tab button visuals
 			for i, tb in ipairs(tabButtons) do
 				if i == idx then
 					tw({v = tb.Button, t = 0.15, g = {
@@ -3768,9 +3906,8 @@ function Library:Window(p)
 			tw({v = ActionBtn, t = 0.12, g = {BackgroundTransparency = 0}}):Play()
 		end)
 
-		renderTier(2) -- Default to Premium
+		renderTier(2)
 
-		-- Register custom theme updating for this comparison card
 		table.insert(currentWindowTheme.controls, {
 			type = "custom",
 			update = function(light)
@@ -3801,7 +3938,6 @@ function Library:Window(p)
 		Image = "zap"
 	})
 
-	-- Live updates for Dashboard metrics
 	task.spawn(function()
 		local startTime = tick()
 		local RunService = game:GetService("RunService")
