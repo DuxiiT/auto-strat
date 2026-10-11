@@ -661,7 +661,7 @@ return function(ctx)
     local RecorderTab = Window:Tab({Title = "Recorder", Icon = "camera"}) do
         Recorder = RecorderTab:CreateLogger({
             Title = "RECORDER:",
-            Size = UDim2.new(0, 625, 0, 260})
+            Size = UDim2.new(0, 625, 0, 260)
         })
 
         RecorderTab:Button({
